@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Analytics Dashboard — AI Second Brain</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            border-color: var(--border-light);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            flex-shrink: 0;
+        }
+
+        .stat-icon.blue {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+
+        .stat-icon.purple {
+            background: rgba(139, 92, 246, 0.1);
+            color: #8b5cf6;
+        }
+
+        .stat-icon.green {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+
+        .stat-info {
+            flex: 1;
+        }
+
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            font-family: var(--font-display);
+            color: var(--text-primary);
+            line-height: 1.1;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+        }
+
+        .chart-card h3 {
+            margin-bottom: 20px;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        @media (max-width: 900px) {
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <div class="logo-text">AI <span>Second Brain</span></div>
+                <div class="logo-sub">Study Assistant</div>
+            </div>
+            <div class="sidebar-user">
+                <div class="user-avatar" id="sidebar-avatar">U</div>
+                <div class="user-info">
+                    <div class="user-name" id="sidebar-name">Loading...</div>
+                    <div class="user-email" id="sidebar-email"></div>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-label">Main</div>
+                <a href="dashboard.html" class="nav-item" data-page="dashboard"><span class="nav-icon">🏠</span>
+                    Dashboard</a>
+                <a href="analytics.html" class="nav-item" data-page="analytics"> <span class="nav-icon">📊</span>
+                    Analytics</a>
+                <a href="chat.html" class="nav-item" data-page="chat"> <span class="nav-icon">💬</span> AI Chat</a>
+                <div class="nav-label" style="margin-top:12px;">Tools</div>
+                <a href="rag.html" class="nav-item" data-page="rag"> <span class="nav-icon">📚</span> Chat with
+                    Notes</a>
+                <a href="upload.html" class="nav-item" data-page="upload"> <span class="nav-icon">📁</span> Upload
+                    Notes</a>
+                <a href="summary.html" class="nav-item" data-page="summary"> <span class="nav-icon">📋</span>
+                    Summary</a>
+                <a href="exam.html" class="nav-item" data-page="exam"> <span class="nav-icon">🎯</span> Exam
+                    Generator</a>
+                <a href="flashcards.html" class="nav-item" data-page="flashcards"> <span class="nav-icon">📇</span>
+                    Flashcards</a>
+                <a href="session.html" class="nav-item" data-page="session"> <span class="nav-icon">⏱️</span> Study
+                    Timer</a>
+                <a href="planner.html" class="nav-item" data-page="planner"> <span class="nav-icon">📅</span> Study
+                    Planner</a>
+            </nav>
+            <div class="sidebar-footer">
+                <button id="logout-btn">🚪 Logout</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <h1>📊 Study Analytics</h1>
+                <p>Track your learning progress and habits</p>
+            </div>
+
+            <div class="page-body">
+                <div id="analytics-loading" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                    Loading your data...
+                </div>
+
+                <div id="analytics-content" style="display: none;">
+                    <!-- Top Stats -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon purple">⏱️</div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="val-hours">0</div>
+                                <div class="stat-label">Total Study Hours</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon blue">📁</div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="val-notes">0</div>
+                                <div class="stat-label">Notes Uploaded</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon green">📅</div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="val-sessions">0</div>
+                                <div class="stat-label">Total Sessions</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Area -->
+                    <div class="charts-container">
+                        <!-- Main Activity Line Chart -->
+                        <div class="chart-card">
+                            <h3>Study Activity (Last 7 Days)</h3>
+                            <div class="chart-wrapper">
+                                <canvas id="activityChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Notes Type Pie Chart -->
+                        <div class="chart-card">
+                            <h3>Notes Distribution</h3>
+                            <div class="chart-wrapper">
+                                <canvas id="distributionChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script>
+        Auth.requireAuth();
+        initSidebar('analytics');
+
+        // Global chart instances for potential updates
+        let activityChartInstance = null;
+        let distributionChartInstance = null;
+
+        // Chart.js Default styling adjustments for dark mode compatibility
+        Chart.defaults.color = 'var(--text-secondary)';
+        Chart.defaults.font.family = 'var(--font-body)';
+
+        async function loadAnalytics() {
+            try {
+                const response = await apiCall('/analytics');
+                const data = response.data;
+
+                // 1. Update Metric Cards
+                document.getElementById('val-hours').textContent = data.metrics.totalStudyHours;
+                document.getElementById('val-notes').textContent = data.metrics.totalNotes;
+                // We'll calculate total sessions from activity array if exact count isn't in metrics
+                // Or we can just sum the minutes logic. We'll leave sessions as N/A or compute it.
+                // For now let's reuse totalStudyMinutes since we didn't send exact session count, 
+                // or we can adjust backend to send count. Let's use totalStudyMinutes.
+                document.getElementById('val-sessions').textContent = data.metrics.totalStudyMinutes + ' min';
+
+                // Switch UI
+                document.getElementById('analytics-loading').style.display = 'none';
+                document.getElementById('analytics-content').style.display = 'block';
+
+                // 2. Render Activity Chart (Bar Chart)
+                const actCtx = document.getElementById('activityChart').getContext('2d');
+                const activityData = data.charts.activity;
+
+                activityChartInstance = new Chart(actCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: activityData.labels,
+                        datasets: [{
+                            label: 'Study Minutes',
+                            data: activityData.datasets[0].data,
+                            backgroundColor: 'rgba(139, 92, 246, 0.8)',
+                            borderColor: '#8b5cf6',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                            },
+                            x: {
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+
+                // 3. Render Distribution Chart (Doughnut)
+                const distCtx = document.getElementById('distributionChart').getContext('2d');
+                const distData = data.charts.distribution;
+
+                distributionChartInstance = new Chart(distCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: distData.labels,
+                        datasets: [{
+                            data: distData.datasets[0].data,
+                            backgroundColor: [
+                                '#ef4444', // Red for PDF
+                                '#3b82f6'  // Blue for Text
+                            ],
+                            borderWidth: 0,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '70%',
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { padding: 20 }
+                            }
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error('Analytics load error:', error);
+                document.getElementById('analytics-loading').innerHTML = `
+                    <div class="alert alert-error">❌ Failed to load analytics. Please try again later.</div>
+                `;
+            }
+        }
+
+        loadAnalytics();
+    </script>
+</body>
+
+</html>

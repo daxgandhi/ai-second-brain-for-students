@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exam Generator — AI Second Brain</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .exam-layout {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .mcq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .mcq-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      transition: var(--transition);
+    }
+
+    .mcq-card:hover {
+      border-color: var(--border-light);
+    }
+
+    .mcq-number {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent-bright);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+
+    .mcq-question {
+      font-size: 0.98rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .mcq-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .option-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      text-align: left;
+      color: var(--text-secondary);
+      font-size: 0.88rem;
+      transition: var(--transition);
+      font-family: var(--font-body);
+      width: 100%;
+    }
+
+    .option-btn:hover:not(:disabled) {
+      border-color: var(--accent);
+      color: var(--text-primary);
+    }
+
+    .option-btn.correct {
+      border-color: var(--success);
+      background: rgba(16, 185, 129, 0.1);
+      color: #6ee7b7;
+    }
+
+    .option-btn.wrong {
+      border-color: var(--danger);
+      background: rgba(239, 68, 68, 0.1);
+      color: #fca5a5;
+    }
+
+    .option-letter {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 1px solid currentColor;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .explanation {
+      background: rgba(59, 130, 246, 0.08);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 0.83rem;
+      color: var(--accent-bright);
+      margin-top: 8px;
+      display: none;
+    }
+
+    .score-banner {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(59, 130, 246, 0.1));
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: var(--radius);
+      padding: 20px;
+      text-align: center;
+      display: none;
+    }
+
+    .score-banner .score-val {
+      font-family: var(--font-display);
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--success);
+    }
+
+    .score-banner p {
+      color: var(--text-secondary);
+      margin-top: 6px;
+    }
+
+    @media (max-width: 900px) {
+      .exam-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-text">AI <span>Second Brain</span></div>
+        <div class="logo-sub">Study Assistant</div>
+      </div>
+      <div class="sidebar-user">
+        <div class="user-avatar" id="sidebar-avatar">U</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebar-name">Loading...</div>
+          <div class="user-email" id="sidebar-email"></div>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-label">Main</div>
+        <a href="dashboard.html" class="nav-item" data-page="dashboard"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="analytics.html" class="nav-item" data-page="analytics"> <span class="nav-icon">📊</span> Analytics</a>
+        <a href="chat.html" class="nav-item" data-page="chat"> <span class="nav-icon">💬</span> AI Chat</a>
+        <div class="nav-label" style="margin-top:12px;">Tools</div>
+        <a href="rag.html" class="nav-item" data-page="rag"> <span class="nav-icon">📚</span> Chat with Notes</a>
+        <a href="upload.html" class="nav-item" data-page="upload"> <span class="nav-icon">📁</span> Upload Notes</a>
+        <a href="summary.html" class="nav-item" data-page="summary"> <span class="nav-icon">📋</span> Summary</a>
+        <a href="exam.html" class="nav-item" data-page="exam"> <span class="nav-icon">🎯</span> Exam Generator</a>
+        <a href="flashcards.html" class="nav-item" data-page="flashcards"> <span class="nav-icon">📇</span>
+          Flashcards</a>
+        <a href="session.html" class="nav-item" data-page="session"> <span class="nav-icon">⏱️</span> Study Timer</a>
+        <a href="planner.html" class="nav-item" data-page="planner"> <span class="nav-icon">📅</span> Study Planner</a>
+      </nav>
+      <div class="sidebar-footer">
+        <button id="logout-btn">🚪 Logout</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="page-header">
+        <h1>🎯 Exam Generator</h1>
+        <p>Generate MCQ practice questions from any topic</p>
+      </div>
+
+      <div class="page-body">
+        <div class="exam-layout">
+          <!-- Config Panel -->
+          <div class="card" style="position:sticky;top:20px;">
+            <h3 style="margin-bottom:20px;">Generate Questions</h3>
+            <div id="message-area"></div>
+
+            <div class="form-group">
+              <label for="topic">Topic / Subject *</label>
+              <input type="text" id="topic" placeholder="e.g. Photosynthesis, World War II, Newton's Laws..." />
+            </div>
+            <div class="form-group">
+              <label for="num-questions">Number of Questions</label>
+              <select id="num-questions">
+                <option value="3">3 Questions</option>
+                <option value="5" selected>5 Questions</option>
+                <option value="7">7 Questions</option>
+                <option value="10">10 Questions</option>
+              </select>
+            </div>
+
+            <button id="generate-btn" class="btn btn-primary btn-full">
+              🎯 Generate MCQs
+            </button>
+
+            <hr class="divider" />
+
+            <!-- Score tracker -->
+            <div id="score-tracker" style="display:none;">
+              <div style="display:flex;justify-content:space-between;font-size:0.88rem;margin-bottom:8px;">
+                <span style="color:var(--text-muted);">Score</span>
+                <span id="score-display" style="font-weight:700;color:var(--success);">0 / 0</span>
+              </div>
+              <div style="background:var(--bg-secondary);border-radius:999px;height:6px;overflow:hidden;">
+                <div id="score-bar"
+                  style="height:100%;background:var(--success);width:0%;transition:width 0.5s ease;border-radius:999px;">
+                </div>
+              </div>
+              <button id="reset-btn" class="btn btn-secondary btn-full" style="margin-top:14px;">🔄 Reset Quiz</button>
+            </div>
+          </div>
+
+          <!-- Questions Area -->
+          <div>
+            <!-- Loading / Empty -->
+            <div id="questions-empty" class="empty-state">
+              <div class="empty-icon">🎯</div>
+              <p>Enter a topic and click "Generate MCQs" to start your practice quiz!</p>
+            </div>
+
+            <!-- Score Banner -->
+            <div id="score-banner" class="score-banner">
+              <div class="score-val" id="final-score">0/0</div>
+              <p>Great job! Review the questions below to learn from any mistakes.</p>
+            </div>
+
+            <!-- MCQ List -->
+            <div id="mcq-list" class="mcq-list"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/utils.js"></script>
+  <script>
+    Auth.requireAuth();
+    initSidebar('exam');
+
+    let questions = [];
+    let answered = {};
+    let correctCount = 0;
+
+    const generateBtn = document.getElementById('generate-btn');
+    const mcqList = document.getElementById('mcq-list');
+    const questionsEmpty = document.getElementById('questions-empty');
+    const scoreTracker = document.getElementById('score-tracker');
+    const msgArea = document.getElementById('message-area');
+
+    // ── Generate MCQs ─────────────────────────────────────────
+    generateBtn.addEventListener('click', async () => {
+      const topic = document.getElementById('topic').value.trim();
+      const numQuestions = document.getElementById('num-questions').value;
+      msgArea.innerHTML = '';
+
+      if (!topic) {
+        msgArea.innerHTML = '<div class="alert alert-error">❌ Please enter a topic</div>';
+        return;
+      }
+
+      setLoading(generateBtn, true);
+      questionsEmpty.style.display = 'none';
+      mcqList.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">⏳ Generating questions...</div>';
+
+      try {
+        const data = await apiCall('/exam', {
+          method: 'POST',
+          body: JSON.stringify({ topic, numQuestions })
+        });
+
+        questions = data.questions;
+        answered = {};
+        correctCount = 0;
+
+        renderQuestions();
+        scoreTracker.style.display = 'block';
+        updateScore();
+
+      } catch (err) {
+        msgArea.innerHTML = `<div class="alert alert-error">❌ ${err.message}</div>`;
+        mcqList.innerHTML = '';
+        questionsEmpty.style.display = 'block';
+      } finally {
+        setLoading(generateBtn, false);
+      }
+    });
+
+    // ── Render questions ──────────────────────────────────────
+    function renderQuestions() {
+      mcqList.innerHTML = '';
+      const letters = ['A', 'B', 'C', 'D'];
+
+      questions.forEach((q, qi) => {
+        const card = document.createElement('div');
+        card.className = 'mcq-card';
+        card.id = `q-${qi}`;
+
+        const optionsHtml = q.options.map((opt, oi) => `
+          <button class="option-btn" data-qi="${qi}" data-oi="${oi}" onclick="selectOption(${qi}, ${oi})">
+            <span class="option-letter">${letters[oi]}</span>
+            ${escapeHtml(opt)}
+          </button>
+        `).join('');
+
+        card.innerHTML = `
+          <div class="mcq-number">Question ${q.id}</div>
+          <div class="mcq-question">${escapeHtml(q.question)}</div>
+          <div class="mcq-options" id="options-${qi}">${optionsHtml}</div>
+          <div class="explanation" id="exp-${qi}">
+            💡 <strong>Explanation:</strong> ${escapeHtml(q.explanation || '')}
+          </div>
+        `;
+
+        mcqList.appendChild(card);
+      });
+    }
+
+    // ── Handle option selection ───────────────────────────────
+    function selectOption(qi, oi) {
+      if (answered[qi] !== undefined) return; // Already answered
+
+      const q = questions[qi];
+      const isRight = oi === q.correct;
+      answered[qi] = oi;
+
+      if (isRight) correctCount++;
+
+      // Disable all options for this question
+      const allOpts = document.querySelectorAll(`#options-${qi} .option-btn`);
+      allOpts.forEach((btn, i) => {
+        btn.disabled = true;
+        if (i === q.correct) btn.classList.add('correct');
+        else if (i === oi && !isRight) btn.classList.add('wrong');
+      });
+
+      // Show explanation
+      document.getElementById(`exp-${qi}`).style.display = 'block';
+
+      updateScore();
+
+      // If all answered, show final score
+      if (Object.keys(answered).length === questions.length) {
+        showFinalScore();
+      }
+    }
+
+    // ── Update score display ──────────────────────────────────
+    function updateScore() {
+      const total = questions.length;
+      const done = Object.keys(answered).length;
+      const pct = total > 0 ? (correctCount / total) * 100 : 0;
+      document.getElementById('score-display').textContent = `${correctCount} / ${total}`;
+      document.getElementById('score-bar').style.width = pct + '%';
+    }
+
+    function showFinalScore() {
+      const banner = document.getElementById('score-banner');
+      document.getElementById('final-score').textContent = `${correctCount}/${questions.length}`;
+      banner.style.display = 'block';
+      banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      // Save exam result to backend
+      submitScore();
+    }
+
+    async function submitScore() {
+      try {
+        const topicInput = document.getElementById('topic').value.trim();
+        const topicLabel = topicInput || "General Practice";
+
+        await apiCall('/exam/submit', {
+          method: 'POST',
+          body: JSON.stringify({
+            topic: topicLabel,
+            score: correctCount,
+            totalQuestions: questions.length
+          })
+        });
+        console.log("Exam score submitted successfully!");
+      } catch (err) {
+        console.error("Failed to submit exam score:", err);
+      }
+    }
+
+    // ── Reset quiz ────────────────────────────────────────────
+    document.getElementById('reset-btn').addEventListener('click', () => {
+      answered = {};
+      correctCount = 0;
+      document.getElementById('score-banner').style.display = 'none';
+      renderQuestions();
+      updateScore();
+    });
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Study Planner — AI Second Brain</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .planner-grid {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .plan-overview {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .ov-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .ov-value {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--accent-bright);
+    }
+
+    .ov-label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Timeline */
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .timeline-item {
+      display: flex;
+      gap: 16px;
+      position: relative;
+    }
+
+    .timeline-left {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+      width: 60px;
+    }
+
+    .timeline-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--bg-primary);
+      flex-shrink: 0;
+      z-index: 1;
+      margin-top: 6px;
+    }
+
+    .timeline-dot.learning {
+      border-color: var(--accent);
+      background: var(--accent-glow);
+    }
+
+    .timeline-dot.practice {
+      border-color: var(--warning);
+      background: rgba(245, 158, 11, 0.1);
+    }
+
+    .timeline-dot.revision {
+      border-color: var(--success);
+      background: rgba(16, 185, 129, 0.1);
+    }
+
+    .timeline-dot.exam-eve {
+      border-color: var(--accent-2);
+      background: rgba(139, 92, 246, 0.15);
+    }
+
+    .timeline-line {
+      width: 2px;
+      flex: 1;
+      background: var(--border);
+      min-height: 30px;
+    }
+
+    .timeline-day-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    .timeline-content {
+      flex: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 10px;
+    }
+
+    .timeline-content:hover {
+      border-color: var(--border-light);
+    }
+
+    .phase-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .phase-badge.learning {
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--accent-bright);
+    }
+
+    .phase-badge.practice {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fcd34d;
+    }
+
+    .phase-badge.revision {
+      background: rgba(16, 185, 129, 0.15);
+      color: #6ee7b7;
+    }
+
+    .phase-badge.exam-eve {
+      background: rgba(139, 92, 246, 0.15);
+      color: #c4b5fd;
+    }
+
+    .timeline-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .tl-subject {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .tl-hours {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .tl-tasks {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .tl-task {
+      font-size: 0.83rem;
+      color: var(--text-secondary);
+    }
+
+    /* Tips */
+    .tips-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .tip-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      font-size: 0.83rem;
+      color: var(--text-secondary);
+    }
+
+    /* Subjects tags */
+    .subject-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .subject-tag {
+      background: var(--accent-glow);
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      border-radius: 999px;
+      padding: 5px 14px;
+      font-size: 0.8rem;
+      color: var(--accent-bright);
+      font-weight: 600;
+    }
+
+    @media (max-width: 900px) {
+      .planner-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .plan-overview {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .plan-overview {
+        grid-template-columns: 1fr;
+      }
+
+      .tips-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-text">AI <span>Second Brain</span></div>
+        <div class="logo-sub">Study Assistant</div>
+      </div>
+      <div class="sidebar-user">
+        <div class="user-avatar" id="sidebar-avatar">U</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebar-name">Loading...</div>
+          <div class="user-email" id="sidebar-email"></div>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-label">Main</div>
+        <a href="dashboard.html" class="nav-item" data-page="dashboard"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="analytics.html" class="nav-item" data-page="analytics"> <span class="nav-icon">📊</span> Analytics</a>
+        <a href="chat.html" class="nav-item" data-page="chat"> <span class="nav-icon">💬</span> AI Chat</a>
+        <div class="nav-label" style="margin-top:12px;">Tools</div>
+        <a href="rag.html" class="nav-item" data-page="rag"> <span class="nav-icon">📚</span> Chat with Notes</a>
+        <a href="upload.html" class="nav-item" data-page="upload"> <span class="nav-icon">📁</span> Upload Notes</a>
+        <a href="summary.html" class="nav-item" data-page="summary"> <span class="nav-icon">📋</span> Summary</a>
+        <a href="exam.html" class="nav-item" data-page="exam"> <span class="nav-icon">🎯</span> Exam Generator</a>
+        <a href="flashcards.html" class="nav-item" data-page="flashcards"> <span class="nav-icon">📇</span>
+          Flashcards</a>
+        <a href="session.html" class="nav-item" data-page="session"> <span class="nav-icon">⏱️</span> Study Timer</a>
+        <a href="planner.html" class="nav-item" data-page="planner"> <span class="nav-icon">📅</span> Study Planner</a>
+      </nav>
+      <div class="sidebar-footer">
+        <button id="logout-btn">🚪 Logout</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="page-header">
+        <h1>📅 Study Planner</h1>
+        <p>Get a personalized day-by-day study schedule before your exam</p>
+      </div>
+
+      <div class="page-body">
+        <div class="planner-grid">
+          <!-- Config -->
+          <div class="card" style="position:sticky;top:20px;">
+            <h3 style="margin-bottom:20px;">Plan Your Study</h3>
+            <div id="message-area"></div>
+
+            <div class="form-group">
+              <label for="exam-date">📅 Exam Date *</label>
+              <input type="date" id="exam-date" />
+            </div>
+            <div class="form-group">
+              <label for="subjects">📚 Subjects *</label>
+              <textarea id="subjects"
+                placeholder="Enter subjects separated by commas or new lines&#10;e.g. Mathematics, Physics, Chemistry"
+                style="min-height:100px;"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="hours-per-day">⏱️ Study Hours per Day</label>
+              <select id="hours-per-day">
+                <option value="2">2 hours/day</option>
+                <option value="3" selected>3 hours/day</option>
+                <option value="4">4 hours/day</option>
+                <option value="5">5 hours/day</option>
+                <option value="6">6 hours/day</option>
+              </select>
+            </div>
+
+            <button id="plan-btn" class="btn btn-primary btn-full">
+              📅 Generate Study Plan
+            </button>
+          </div>
+
+          <!-- Plan Output -->
+          <div id="plan-output">
+            <div class="empty-state">
+              <div class="empty-icon">📅</div>
+              <p>Fill in your exam details and click "Generate Study Plan" to get your personalized schedule.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/utils.js"></script>
+  <script>
+    Auth.requireAuth();
+    initSidebar('planner');
+
+    // Set minimum date to tomorrow
+    const examDateInput = document.getElementById('exam-date');
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    examDateInput.min = tomorrow.toISOString().split('T')[0];
+
+    const planBtn = document.getElementById('plan-btn');
+    const msgArea = document.getElementById('message-area');
+    const planOutput = document.getElementById('plan-output');
+
+    planBtn.addEventListener('click', async () => {
+      const examDate = examDateInput.value;
+      const subjects = document.getElementById('subjects').value.trim();
+      const hoursPerDay = document.getElementById('hours-per-day').value;
+      msgArea.innerHTML = '';
+
+      if (!examDate) {
+        msgArea.innerHTML = '<div class="alert alert-error">❌ Please select your exam date</div>';
+        return;
+      }
+      if (!subjects) {
+        msgArea.innerHTML = '<div class="alert alert-error">❌ Please enter at least one subject</div>';
+        return;
+      }
+
+      setLoading(planBtn, true);
+      planOutput.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text-muted);">⏳ Building your study plan...</div>';
+
+      try {
+        const data = await apiCall('/planner', {
+          method: 'POST',
+          body: JSON.stringify({ examDate, subjects, hoursPerDay })
+        });
+
+        renderPlan(data);
+
+      } catch (err) {
+        msgArea.innerHTML = `<div class="alert alert-error">❌ ${err.message}</div>`;
+        planOutput.innerHTML = '';
+      } finally {
+        setLoading(planBtn, false);
+      }
+    });
+
+    function renderPlan(data) {
+      const phaseClass = (phase) => phase.toLowerCase().replace(' ', '-').replace('exam-eve', 'exam-eve');
+
+      // Subject tags
+      const subjectTagsHtml = data.subjects.map(s =>
+        `<span class="subject-tag">${escapeHtml(s)}</span>`
+      ).join('');
+
+      // Overview
+      const overviewHtml = `
+        <div class="plan-overview">
+          <div class="ov-card">
+            <div class="ov-value">${data.daysLeft}</div>
+            <div class="ov-label">Days Until Exam</div>
+          </div>
+          <div class="ov-card">
+            <div class="ov-value">${data.totalStudyHours}h</div>
+            <div class="ov-label">Total Study Hours</div>
+          </div>
+          <div class="ov-card">
+            <div class="ov-value">${data.subjects.length}</div>
+            <div class="ov-label">Subjects</div>
+          </div>
+        </div>
+      `;
+
+      // Timeline
+      const timelineHtml = data.schedule.map((day, i) => {
+        const pClass = day.phase.toLowerCase().replace(' ', '-');
+        const tasksHtml = day.tasks.map(t => `<div class="tl-task">${escapeHtml(t)}</div>`).join('');
+        const isLast = i === data.schedule.length - 1;
+
+        return `
+          <div class="timeline-item">
+            <div class="timeline-left">
+              <div class="timeline-dot ${pClass}"></div>
+              ${!isLast ? '<div class="timeline-line"></div>' : ''}
+            </div>
+            <div class="timeline-content">
+              <span class="phase-badge ${pClass}">${day.phase}</span>
+              <div class="timeline-header">
+                <span class="tl-subject">Day ${day.day} — ${escapeHtml(day.date)}</span>
+                <span class="tl-hours">⏱️ ${day.hours}h</span>
+              </div>
+              <div class="tl-tasks">${tasksHtml}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Tips
+      const tipsHtml = data.tips.map(t => `<div class="tip-card">${escapeHtml(t)}</div>`).join('');
+
+      planOutput.innerHTML = `
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+            <h3>📅 Your Study Plan</h3>
+            <span style="font-size:0.85rem;color:var(--text-muted);">Exam: ${new Date(data.examDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</span>
+          </div>
+
+          <div class="subject-tags">${subjectTagsHtml}</div>
+
+          ${overviewHtml}
+
+          <div class="card">
+            <h3 style="margin-bottom:20px;">📆 Day-by-Day Schedule</h3>
+            <div class="timeline">${timelineHtml}</div>
+          </div>
+
+          <div class="card" style="margin-top:20px;">
+            <h3 style="margin-bottom:14px;">💡 Study Tips</h3>
+            <div class="tips-grid">${tipsHtml}</div>
+          </div>
+        </div>
+      `;
+    }
+  </script>
+</body>
+
+</html>

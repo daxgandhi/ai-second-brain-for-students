@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — AI Second Brain</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .welcome-banner {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.1));
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: var(--radius-lg);
+      padding: 28px 32px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .welcome-banner h2 {
+      font-size: 1.5rem;
+      margin-bottom: 4px;
+    }
+
+    .welcome-banner p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 32px;
+    }
+
+    .quick-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+      text-decoration: none;
+      display: block;
+    }
+
+    .quick-btn:hover {
+      border-color: var(--accent);
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .quick-btn .q-icon {
+      font-size: 1.8rem;
+      margin-bottom: 8px;
+    }
+
+    .quick-btn .q-label {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .notes-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .note-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: var(--transition);
+    }
+
+    .note-item:hover {
+      border-color: var(--border-light);
+    }
+
+    .note-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .note-icon.pdf {
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    .note-icon.text {
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    .note-details {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .note-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .note-meta {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    .note-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .icon-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      transition: var(--transition);
+    }
+
+    .icon-btn:hover {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    #notes-loading {
+      text-align: center;
+      padding: 32px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+
+<body>
+  <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-text">AI <span>Second Brain</span></div>
+        <div class="logo-sub">Study Assistant</div>
+      </div>
+      <div class="sidebar-user">
+        <div class="user-avatar" id="sidebar-avatar">U</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebar-name">Loading...</div>
+          <div class="user-email" id="sidebar-email"></div>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-label">Main</div>
+        <a href="dashboard.html" class="nav-item" data-page="dashboard"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="analytics.html" class="nav-item" data-page="analytics"> <span class="nav-icon">📊</span> Analytics</a>
+        <a href="chat.html" class="nav-item" data-page="chat"> <span class="nav-icon">💬</span> AI Chat</a>
+        <div class="nav-label" style="margin-top:12px;">Tools</div>
+        <a href="rag.html" class="nav-item" data-page="rag"> <span class="nav-icon">📚</span> Chat with Notes</a>
+        <a href="upload.html" class="nav-item" data-page="upload"> <span class="nav-icon">📁</span> Upload Notes</a>
+        <a href="summary.html" class="nav-item" data-page="summary"> <span class="nav-icon">📋</span> Summary</a>
+        <a href="exam.html" class="nav-item" data-page="exam"> <span class="nav-icon">🎯</span> Exam Generator</a>
+        <a href="flashcards.html" class="nav-item" data-page="flashcards"> <span class="nav-icon">📇</span>
+          Flashcards</a>
+        <a href="session.html" class="nav-item" data-page="session"> <span class="nav-icon">⏱️</span> Study Timer</a>
+        <a href="planner.html" class="nav-item" data-page="planner"> <span class="nav-icon">📅</span> Study Planner</a>
+      </nav>
+      <div class="sidebar-footer">
+        <button id="logout-btn">🚪 Logout</button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="page-header">
+        <h1 id="welcome-heading">Good day! 👋</h1>
+        <p>Here's your study overview</p>
+      </div>
+
+      <div class="page-body">
+        <!-- Welcome Banner -->
+        <div class="welcome-banner">
+          <div>
+            <h2>Ready to study smarter?</h2>
+            <p>Use AI tools to upload notes, get summaries, practice with MCQs, and plan your study schedule.</p>
+          </div>
+          <a href="chat.html" class="btn btn-primary">💬 Start Chatting</a>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid-4" id="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon blue">📁</div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-notes">0</div>
+              <div class="stat-label">Notes Uploaded</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">💬</div>
+            <div class="stat-info">
+              <div class="stat-value">∞</div>
+              <div class="stat-label">AI Chats Available</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon purple">⏱️</div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-hours">0</div>
+              <div class="stat-label">Study Hours</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon orange">📅</div>
+            <div class="stat-info">
+              <div class="stat-value">Plan</div>
+              <div class="stat-label">Study Planner</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weak Topics (Areas to Review) -->
+        <div id="weak-topics-section" style="display:none; margin-bottom: 32px;">
+          <h3 style="margin: 28px 0 16px; color: var(--danger);">⚠ Areas to Review</h3>
+          <div class="grid-4" id="weak-topics-grid">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <h3 style="margin: 28px 0 16px;">Quick Actions</h3>
+        <div class="quick-actions">
+          <a href="chat.html" class="quick-btn">
+            <div class="q-icon">💬</div>
+            <div class="q-label">AI Chat</div>
+          </a>
+          <a href="upload.html" class="quick-btn">
+            <div class="q-icon">📁</div>
+            <div class="q-label">Upload Notes</div>
+          </a>
+          <a href="summary.html" class="quick-btn">
+            <div class="q-icon">📋</div>
+            <div class="q-label">Summarize</div>
+          </a>
+          <a href="exam.html" class="quick-btn">
+            <div class="q-icon">🎯</div>
+            <div class="q-label">Generate MCQs</div>
+          </a>
+          <a href="flashcards.html" class="quick-btn">
+            <div class="q-icon">📇</div>
+            <div class="q-label">Flashcards</div>
+          </a>
+          <a href="session.html" class="quick-btn">
+            <div class="q-icon">⏱️</div>
+            <div class="q-label">Study Timer</div>
+          </a>
+          <a href="planner.html" class="quick-btn">
+            <div class="q-icon">📅</div>
+            <div class="q-label">Study Planner</div>
+          </a>
+          <a href="analytics.html" class="quick-btn">
+            <div class="q-icon">📊</div>
+            <div class="q-label">Analytics</div>
+          </a>
+        </div>
+
+        <!-- Recent Notes -->
+        <div class="card">
+          <div class="card-header">
+            <h3>📚 Recent Notes</h3>
+            <a href="upload.html" class="btn btn-secondary" style="padding:7px 16px;font-size:0.82rem;">+ Add Notes</a>
+          </div>
+          <div id="notes-loading">Loading your notes...</div>
+          <div id="notes-list" class="notes-list" style="display:none;"></div>
+          <div id="notes-empty" class="empty-state" style="display:none;">
+            <div class="empty-icon">📂</div>
+            <p>No notes yet. <a href="upload.html">Upload your first note →</a></p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/utils.js"></script>
+  <script>
+    Auth.requireAuth();
+    initSidebar('dashboard');
+
+    // Set greeting
+    const user = Auth.getUser();
+    const hour = new Date().getHours();
+    let greeting = 'Good evening';
+    if (hour >= 5 && hour < 12) greeting = 'Good morning';
+    else if (hour >= 12 && hour < 17) greeting = 'Good afternoon';
+    else if (hour >= 17 && hour < 22) greeting = 'Good evening';
+    else greeting = 'Studying late';
+
+    document.getElementById('welcome-heading').textContent = `${greeting}, ${user.name.split(' ')[0]}! 👋`;
+
+    // Load notes and analytics
+    async function loadDashboardData() {
+      try {
+        // Fetch Notes
+        const data = await apiCall('/notes');
+        const notes = data.notes || [];
+
+        document.getElementById('notes-loading').style.display = 'none';
+        document.getElementById('stat-notes').textContent = notes.length;
+
+        // Fetch Analytics for Study Hours and Weak Topics
+        try {
+          const analyticsData = await apiCall('/analytics');
+          if (analyticsData.data) {
+            if (analyticsData.data.metrics) {
+              document.getElementById('stat-hours').textContent = analyticsData.data.metrics.totalStudyHours;
+            }
+
+            // Render Weak Topics
+            const weakTopics = analyticsData.data.weakTopics || [];
+            if (weakTopics.length > 0) {
+              document.getElementById('weak-topics-section').style.display = 'block';
+              const grid = document.getElementById('weak-topics-grid');
+              grid.innerHTML = weakTopics.map(wt => `
+                <div class="stat-card" style="border-left: 4px solid var(--danger);">
+                  <div class="stat-info" style="width: 100%;">
+                    <div style="font-size: 0.82rem; color: var(--danger); font-weight: 700; margin-bottom: 4px;">Weak Topic</div>
+                    <div class="stat-label" style="font-weight: 600; color: var(--text-primary); margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(wt.topic)}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <span style="font-size: 0.9rem; font-weight: 700;">${wt.avgScore}% Accuracy</span>
+                      <a href="exam.html" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;">Take Quiz</a>
+                    </div>
+                  </div>
+                </div>
+              `).join('');
+            }
+          }
+        } catch (analyticsErr) {
+          console.error("Failed to fetch analytics for dashboard:", analyticsErr);
+        }
+
+        if (notes.length === 0) {
+          document.getElementById('notes-empty').style.display = 'block';
+          return;
+        }
+
+        document.getElementById('notes-list').style.display = 'flex';
+        const list = document.getElementById('notes-list');
+
+        // Show only latest 5
+        notes.slice(0, 5).forEach(note => {
+          const isPdf = note.fileType === 'pdf';
+          const item = document.createElement('div');
+          item.className = 'note-item';
+          item.innerHTML = `
+            <div class="note-icon ${isPdf ? 'pdf' : 'text'}">${isPdf ? '📄' : '📝'}</div>
+            <div class="note-details">
+              <div class="note-title">${escapeHtml(note.title)}</div>
+              <div class="note-meta">${isPdf ? note.fileName || 'PDF' : 'Text note'} · ${formatDate(note.createdAt)}</div>
+            </div>
+            <div class="note-actions">
+              ${isPdf && note.fileUrl ? `<a href="http://localhost:5000${note.fileUrl}" target="_blank" class="icon-btn">👁️ View</a>` : ''}
+              <button class="icon-btn" onclick="deleteNote('${note._id}', this)">🗑️ Delete</button>
+            </div>
+          `;
+          list.appendChild(item);
+        });
+
+      } catch (err) {
+        document.getElementById('notes-loading').textContent = '⚠️ ' + err.message;
+      }
+    }
+
+    async function deleteNote(id, btn) {
+      if (!confirm('Delete this note?')) return;
+      try {
+        await apiCall(`/notes/${id}`, { method: 'DELETE' });
+        btn.closest('.note-item').remove();
+        Toast.success('Note deleted');
+        const current = parseInt(document.getElementById('stat-notes').textContent);
+        document.getElementById('stat-notes').textContent = Math.max(0, current - 1);
+      } catch (err) {
+        Toast.error(err.message);
+      }
+    }
+
+    loadDashboardData();
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flashcards — AI Second Brain</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <style>
+        .flashcard-layout {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        .flashcard-container {
+            perspective: 1000px;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            height: 350px;
+            position: relative;
+        }
+
+        .flashcard {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+
+        .flashcard.is-flipped {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: var(--radius-lg);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border);
+        }
+
+        .flashcard-front {
+            background: linear-gradient(135deg, var(--bg-card), var(--bg-secondary));
+            color: var(--text-primary);
+        }
+
+        .flashcard-back {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1));
+            color: var(--text-primary);
+            transform: rotateY(180deg);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .flashcard-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--accent-bright);
+            margin-bottom: 20px;
+            font-weight: 700;
+            position: absolute;
+            top: 30px;
+        }
+
+        .flashcard-content {
+            font-size: 1.25rem;
+            line-height: 1.6;
+            font-weight: 500;
+        }
+
+        .flashcard-hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            position: absolute;
+            bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .flashcard-hint svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .flashcard-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .control-btn {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: var(--transition);
+        }
+
+        .control-btn:hover:not(:disabled) {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .progress-text {
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        @media (max-width: 900px) {
+            .flashcard-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <div class="logo-text">AI <span>Second Brain</span></div>
+                <div class="logo-sub">Study Assistant</div>
+            </div>
+            <div class="sidebar-user">
+                <div class="user-avatar" id="sidebar-avatar">U</div>
+                <div class="user-info">
+                    <div class="user-name" id="sidebar-name">Loading...</div>
+                    <div class="user-email" id="sidebar-email"></div>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-label">Main</div>
+                <a href="dashboard.html" class="nav-item" data-page="dashboard"><span class="nav-icon">🏠</span>
+                    Dashboard</a>
+                <a href="analytics.html" class="nav-item" data-page="analytics"> <span class="nav-icon">📊</span>
+                    Analytics</a>
+                <a href="chat.html" class="nav-item" data-page="chat"> <span class="nav-icon">💬</span> AI Chat</a>
+                <div class="nav-label" style="margin-top:12px;">Tools</div>
+                <a href="rag.html" class="nav-item" data-page="rag"> <span class="nav-icon">📚</span> Chat with
+                    Notes</a>
+                <a href="upload.html" class="nav-item" data-page="upload"> <span class="nav-icon">📁</span> Upload
+                    Notes</a>
+                <a href="summary.html" class="nav-item" data-page="summary"> <span class="nav-icon">📋</span>
+                    Summary</a>
+                <a href="exam.html" class="nav-item" data-page="exam"> <span class="nav-icon">🎯</span> Exam
+                    Generator</a>
+                <a href="flashcards.html" class="nav-item" data-page="flashcards"> <span class="nav-icon">📇</span>
+                    Flashcards</a>
+                <a href="session.html" class="nav-item" data-page="session"> <span class="nav-icon">⏱️</span> Study
+                    Timer</a>
+                <a href="planner.html" class="nav-item" data-page="planner"> <span class="nav-icon">📅</span> Study
+                    Planner</a>
+            </nav>
+            <div class="sidebar-footer">
+                <button id="logout-btn">🚪 Logout</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <h1>📇 Flashcards</h1>
+                <p>AI-generated interactive flashcards for active recall and study</p>
+            </div>
+
+            <div class="page-body">
+                <div class="flashcard-layout">
+                    <!-- Config Panel -->
+                    <div class="card" style="position:sticky;top:20px;">
+                        <h3 style="margin-bottom:20px;">Create Deck</h3>
+                        <div id="message-area"></div>
+
+                        <div class="tabs"
+                            style="display:flex;gap:10px;margin-bottom:15px;background:var(--bg-secondary);padding:4px;border-radius:var(--radius-sm);">
+                            <button class="tab-btn active" data-tab="tab-topic"
+                                style="flex:1;padding:8px;border:none;background:var(--bg-card);border-radius:4px;cursor:pointer;font-weight:600;color:var(--text-primary);">By
+                                Topic</button>
+                            <button class="tab-btn" data-tab="tab-note"
+                                style="flex:1;padding:8px;border:none;background:transparent;border-radius:4px;cursor:pointer;font-weight:600;color:var(--text-secondary);">From
+                                Note</button>
+                        </div>
+
+                        <div id="tab-topic" class="tab-content" style="display:block;">
+                            <div class="form-group">
+                                <label for="topic">Topic / Subject</label>
+                                <input type="text" id="topic" placeholder="e.g. Human Anatomy, Machine Learning..." />
+                            </div>
+                        </div>
+
+                        <div id="tab-note" class="tab-content" style="display:none;">
+                            <div class="form-group">
+                                <label for="note-select">Select a Note</label>
+                                <select id="note-select">
+                                    <option value="">Loading notes...</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="num-cards">Number of Cards</label>
+                            <select id="num-cards">
+                                <option value="5">5 Cards</option>
+                                <option value="10" selected>10 Cards</option>
+                                <option value="15">15 Cards</option>
+                                <option value="20">20 Cards</option>
+                            </select>
+                        </div>
+
+                        <button id="generate-btn" class="btn btn-primary btn-full" style="margin-top:10px;">
+                            ✨ Generate Flashcards
+                        </button>
+                    </div>
+
+                    <!-- Flashcard Area -->
+                    <div>
+                        <!-- Loading / Empty -->
+                        <div id="cards-empty" class="empty-state">
+                            <div class="empty-icon">📇</div>
+                            <p>Generate a deck to start flipping and learning!</p>
+                        </div>
+
+                        <!-- Flashcard UI -->
+                        <div id="flashcard-workspace" style="display:none; padding-top: 20px;">
+                            <div style="text-align: center; margin-bottom: 24px;">
+                                <h2 id="deck-title" style="color: var(--text-primary); margin-bottom: 8px;">Generated
+                                    Deck</h2>
+                                <p style="color: var(--text-muted);">Click the card to reveal the answer.</p>
+                            </div>
+
+                            <div class="flashcard-container">
+                                <div class="flashcard" id="active-card">
+                                    <div class="flashcard-face flashcard-front">
+                                        <span class="flashcard-title">Question</span>
+                                        <div class="flashcard-content" id="card-front-text">Loading...</div>
+                                        <div class="flashcard-hint">
+                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122">
+                                                </path>
+                                            </svg>
+                                            Click to flip
+                                        </div>
+                                    </div>
+                                    <div class="flashcard-face flashcard-back">
+                                        <span class="flashcard-title">Answer</span>
+                                        <div class="flashcard-content" id="card-back-text">Loading...</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flashcard-controls">
+                                <button class="control-btn" id="prev-btn" title="Previous Card">←</button>
+                                <div class="progress-text" id="card-progress">1 / 10</div>
+                                <button class="control-btn" id="next-btn" title="Next Card">→</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script>
+        Auth.requireAuth();
+        initSidebar('flashcards');
+
+        let deck = [];
+        let currentIndex = 0;
+        let isFlipped = false;
+
+        const generateBtn = document.getElementById('generate-btn');
+        const msgArea = document.getElementById('message-area');
+        const workspace = document.getElementById('flashcard-workspace');
+        const emptyState = document.getElementById('cards-empty');
+        const noteSelect = document.getElementById('note-select');
+
+        // UI Elements
+        const activeCard = document.getElementById('active-card');
+        const cardFrontText = document.getElementById('card-front-text');
+        const cardBackText = document.getElementById('card-back-text');
+        const cardProgress = document.getElementById('card-progress');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const deckTitle = document.getElementById('deck-title');
+
+        // ── Tabs Logic ────────────────────────────────────────────
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // update buttons
+                tabBtns.forEach(b => {
+                    b.classList.remove('active');
+                    b.style.background = 'transparent';
+                    b.style.color = 'var(--text-secondary)';
+                });
+                btn.classList.add('active');
+                btn.style.background = 'var(--bg-card)';
+                btn.style.color = 'var(--text-primary)';
+
+                // show content
+                document.querySelectorAll('.tab-content').forEach(tc => tc.style.display = 'none');
+                document.getElementById(btn.dataset.tab).style.display = 'block';
+            });
+        });
+
+        // ── Load Notes ────────────────────────────────────────────
+        async function loadNotes() {
+            try {
+                const data = await apiCall('/notes');
+                const notes = data.notes || [];
+
+                if (notes.length === 0) {
+                    noteSelect.innerHTML = '<option value="">No notes available</option>';
+                } else {
+                    noteSelect.innerHTML = '<option value="">-- Select a note --</option>' +
+                        notes.map(n => `<option value="${n._id}">${escapeHtml(n.title)}</option>`).join('');
+                }
+            } catch (err) {
+                console.error('Notes load error:', err);
+                noteSelect.innerHTML = '<option value="">Error loading notes</option>';
+            }
+        }
+        loadNotes();
+
+        // ── Card Flip Logic ───────────────────────────────────────
+        activeCard.addEventListener('click', () => {
+            if (deck.length === 0) return;
+            isFlipped = !isFlipped;
+            if (isFlipped) {
+                activeCard.classList.add('is-flipped');
+            } else {
+                activeCard.classList.remove('is-flipped');
+            }
+        });
+
+        // ── Navigation Logic ──────────────────────────────────────
+        function updateCardView() {
+            if (deck.length === 0) return;
+
+            // Always show front when changing cards
+            isFlipped = false;
+            activeCard.classList.remove('is-flipped');
+
+            // Wait for flip animation to finish before changing text (optional: setTimeout)
+            cardFrontText.textContent = deck[currentIndex].front;
+            cardBackText.textContent = deck[currentIndex].back;
+
+            cardProgress.textContent = `${currentIndex + 1} / ${deck.length}`;
+
+            prevBtn.disabled = currentIndex === 0;
+            nextBtn.disabled = currentIndex === deck.length - 1;
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateCardView();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentIndex < deck.length - 1) {
+                currentIndex++;
+                updateCardView();
+            }
+        });
+
+        // ── Keyboard Shortcuts ────────────────────────────────────
+        document.addEventListener('keydown', (e) => {
+            if (deck.length === 0 || document.activeElement.tagName === 'INPUT') return;
+
+            if (e.code === 'Space') {
+                e.preventDefault();
+                activeCard.click();
+            } else if (e.code === 'ArrowRight') {
+                nextBtn.click();
+            } else if (e.code === 'ArrowLeft') {
+                prevBtn.click();
+            }
+        });
+
+        // ── Generate Flashcards ───────────────────────────────────
+        generateBtn.addEventListener('click', async () => {
+            const activeTab = document.querySelector('.tab-btn.active').dataset.tab;
+            const numCards = document.getElementById('num-cards').value;
+            const payload = { numCards: parseInt(numCards) };
+
+            if (activeTab === 'tab-topic') {
+                const topic = document.getElementById('topic').value.trim();
+                if (!topic) {
+                    msgArea.innerHTML = '<div class="alert alert-error">❌ Please enter a topic</div>';
+                    return;
+                }
+                payload.topic = topic;
+            } else {
+                const noteId = noteSelect.value;
+                if (!noteId) {
+                    msgArea.innerHTML = '<div class="alert alert-error">❌ Please select a note</div>';
+                    return;
+                }
+                payload.noteId = noteId;
+            }
+
+            msgArea.innerHTML = '';
+            setLoading(generateBtn, true);
+            emptyState.style.display = 'block';
+            emptyState.innerHTML = '<div style="padding:40px;color:var(--text-muted);">⏳ Generating flashcards...</div>';
+            workspace.style.display = 'none';
+
+            try {
+                const data = await apiCall('/flashcards', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+
+                deck = data.flashcards;
+                if (deck.length === 0) {
+                    throw new Error("No flashcards were generated.");
+                }
+
+                deckTitle.textContent = data.topic ? `Deck: ${data.topic}` : 'Your Deck';
+                currentIndex = 0;
+                isFlipped = false;
+
+                emptyState.style.display = 'none';
+                workspace.style.display = 'block';
+
+                updateCardView();
+
+            } catch (err) {
+                msgArea.innerHTML = `<div class="alert alert-error">❌ ${err.message}</div>`;
+                emptyState.innerHTML = `
+            <div class="empty-icon">📇</div>
+            <p>Generate a deck to start flipping and learning!</p>
+        `;
+            } finally {
+                setLoading(generateBtn, false);
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Summary Generator — AI Second Brain</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .result-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      min-height: 200px;
+      line-height: 1.8;
+      font-size: 0.93rem;
+      color: var(--text-primary);
+    }
+
+    .result-box.empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 10px;
+      color: var(--text-muted);
+    }
+
+    .result-box.empty .empty-icon {
+      font-size: 2.5rem;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .stat-pill {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 16px;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+    }
+
+    .copy-btn {
+      float: right;
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      margin-left: 8px;
+    }
+
+    @media (max-width: 768px) {
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-text">AI <span>Second Brain</span></div>
+        <div class="logo-sub">Study Assistant</div>
+      </div>
+      <div class="sidebar-user">
+        <div class="user-avatar" id="sidebar-avatar">U</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebar-name">Loading...</div>
+          <div class="user-email" id="sidebar-email"></div>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-label">Main</div>
+        <a href="dashboard.html" class="nav-item" data-page="dashboard"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="analytics.html" class="nav-item" data-page="analytics"> <span class="nav-icon">📊</span> Analytics</a>
+        <a href="chat.html" class="nav-item" data-page="chat"> <span class="nav-icon">💬</span> AI Chat</a>
+        <div class="nav-label" style="margin-top:12px;">Tools</div>
+        <a href="rag.html" class="nav-item" data-page="rag"> <span class="nav-icon">📚</span> Chat with Notes</a>
+        <a href="upload.html" class="nav-item" data-page="upload"> <span class="nav-icon">📁</span> Upload Notes</a>
+        <a href="summary.html" class="nav-item" data-page="summary"> <span class="nav-icon">📋</span> Summary</a>
+        <a href="exam.html" class="nav-item" data-page="exam"> <span class="nav-icon">🎯</span> Exam Generator</a>
+        <a href="flashcards.html" class="nav-item" data-page="flashcards"> <span class="nav-icon">📇</span>
+          Flashcards</a>
+        <a href="session.html" class="nav-item" data-page="session"> <span class="nav-icon">⏱️</span> Study Timer</a>
+        <a href="planner.html" class="nav-item" data-page="planner"> <span class="nav-icon">📅</span> Study Planner</a>
+      </nav>
+      <div class="sidebar-footer">
+        <button id="logout-btn">🚪 Logout</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="page-header">
+        <h1>📋 Summary Generator</h1>
+        <p>Paste your notes or text and get a concise summary instantly</p>
+      </div>
+
+      <div class="page-body">
+        <div class="summary-grid">
+          <!-- Input -->
+          <div class="card">
+            <h3 style="margin-bottom:16px;">Input Text</h3>
+            <div id="message-area"></div>
+            <div class="form-group">
+              <label for="input-text">Paste your notes / text</label>
+              <textarea id="input-text"
+                placeholder="Paste lecture notes, textbook paragraphs, or any study material here..."
+                style="min-height:280px;"></textarea>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;">
+              <span id="word-count" style="font-size:0.8rem;color:var(--text-muted);">0 words</span>
+              <button type="button" id="clear-input-btn" class="btn btn-secondary"
+                style="padding:7px 14px;font-size:0.8rem;margin-left:auto;">Clear</button>
+            </div>
+            <button id="summarize-btn" class="btn btn-primary btn-full">
+              ✨ Generate Summary
+            </button>
+          </div>
+
+          <!-- Output -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Summary Result</h3>
+              <button id="copy-btn" class="btn btn-secondary copy-btn" style="display:none;">📋 Copy</button>
+            </div>
+
+            <div id="result-area" class="result-box empty">
+              <div class="empty-icon">📋</div>
+              <p>Summary will appear here</p>
+            </div>
+
+            <div id="stats-row" class="stats-row" style="display:none;">
+              <span class="stat-pill">📄 Original: <strong id="stat-original">0</strong> words</span>
+              <span class="stat-pill">📝 Summary: <strong id="stat-summary">0</strong> words</span>
+              <span class="stat-pill">🔥 Compressed: <strong id="stat-ratio">0</strong>%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/utils.js"></script>
+  <script>
+    Auth.requireAuth();
+    initSidebar('summary');
+
+    const inputEl = document.getElementById('input-text');
+    const summarizeBtn = document.getElementById('summarize-btn');
+    const resultArea = document.getElementById('result-area');
+    const copyBtn = document.getElementById('copy-btn');
+    const msgArea = document.getElementById('message-area');
+    const wordCountEl = document.getElementById('word-count');
+    const statsRow = document.getElementById('stats-row');
+
+    // Live word count
+    inputEl.addEventListener('input', () => {
+      const words = inputEl.value.trim().split(/\s+/).filter(Boolean).length;
+      wordCountEl.textContent = words + ' word' + (words !== 1 ? 's' : '');
+    });
+
+    // Clear input
+    document.getElementById('clear-input-btn').addEventListener('click', () => {
+      inputEl.value = '';
+      wordCountEl.textContent = '0 words';
+      resetResult();
+    });
+
+    function resetResult() {
+      resultArea.className = 'result-box empty';
+      resultArea.innerHTML = '<div class="empty-icon">📋</div><p>Summary will appear here</p>';
+      copyBtn.style.display = 'none';
+      statsRow.style.display = 'none';
+      msgArea.innerHTML = '';
+    }
+
+    // Generate summary
+    summarizeBtn.addEventListener('click', async () => {
+      const text = inputEl.value.trim();
+      msgArea.innerHTML = '';
+
+      if (!text) {
+        msgArea.innerHTML = '<div class="alert alert-error">❌ Please enter some text to summarize</div>';
+        return;
+      }
+      if (text.length < 20) {
+        msgArea.innerHTML = '<div class="alert alert-error">❌ Text is too short. Please enter more content.</div>';
+        return;
+      }
+
+      setLoading(summarizeBtn, true);
+      resultArea.className = 'result-box';
+      resultArea.innerHTML = '<div style="display:flex;align-items:center;gap:10px;color:var(--text-muted);"><span class="spinner" style="border-color:rgba(148,163,184,0.3);border-top-color:var(--accent-bright);width:20px;height:20px;border-width:3px;"></span> Generating summary...</div>';
+
+      try {
+        const data = await apiCall('/summary', {
+          method: 'POST',
+          body: JSON.stringify({ text })
+        });
+
+        resultArea.className = 'result-box';
+        resultArea.innerHTML = parseMarkdown(escapeHtml(data.summary));
+
+        // Show stats
+        document.getElementById('stat-original').textContent = data.originalWordCount;
+        document.getElementById('stat-summary').textContent = data.summaryWordCount;
+        document.getElementById('stat-ratio').textContent = data.compressionRatio + '%';
+        statsRow.style.display = 'flex';
+        copyBtn.style.display = 'inline-flex';
+
+      } catch (err) {
+        msgArea.innerHTML = `<div class="alert alert-error">❌ ${err.message}</div>`;
+        resetResult();
+      } finally {
+        setLoading(summarizeBtn, false);
+      }
+    });
+
+    // Copy summary
+    copyBtn.addEventListener('click', () => {
+      const text = resultArea.innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        Toast.success('Summary copied to clipboard!');
+      });
+    });
+  </script>
+</body>
+
+</html>

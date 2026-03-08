@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Study Timer — AI Second Brain</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <style>
+        .timer-layout {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .timer-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 40px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        .timer-display {
+            font-size: 6rem;
+            font-weight: 800;
+            font-family: var(--font-display);
+            color: var(--accent);
+            margin: 20px 0;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .topic-input {
+            font-size: 1.25rem;
+            padding: 12px;
+            text-align: center;
+            border: 1px dashed var(--border);
+            background: transparent;
+            color: var(--text-primary);
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 20px auto;
+            border-radius: var(--radius);
+            transition: var(--transition);
+        }
+
+        .topic-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: var(--bg-secondary);
+        }
+
+        .timer-controls {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 30px;
+        }
+
+        .control-btn {
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-start {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-start:hover {
+            background: #059669;
+        }
+
+        .btn-pause {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-pause:hover {
+            background: #d97706;
+        }
+
+        .btn-stop {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-stop:hover {
+            background: #dc2626;
+        }
+
+        .history-card {
+            width: 100%;
+        }
+
+        .session-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .session-item:last-child {
+            border-bottom: none;
+        }
+
+        .session-topic {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .session-meta {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .session-duration {
+            font-weight: 700;
+            color: var(--accent);
+            font-size: 1.1rem;
+        }
+
+        #message-area {
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <div class="logo-text">AI <span>Second Brain</span></div>
+                <div class="logo-sub">Study Assistant</div>
+            </div>
+            <div class="sidebar-user">
+                <div class="user-avatar" id="sidebar-avatar">U</div>
+                <div class="user-info">
+                    <div class="user-name" id="sidebar-name">Loading...</div>
+                    <div class="user-email" id="sidebar-email"></div>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-label">Main</div>
+                <a href="dashboard.html" class="nav-item" data-page="dashboard"><span class="nav-icon">🏠</span>
+                    Dashboard</a>
+                <a href="analytics.html" class="nav-item" data-page="analytics"> <span class="nav-icon">📊</span>
+                    Analytics</a>
+                <a href="chat.html" class="nav-item" data-page="chat"> <span class="nav-icon">💬</span> AI Chat</a>
+                <div class="nav-label" style="margin-top:12px;">Tools</div>
+                <a href="rag.html" class="nav-item" data-page="rag"> <span class="nav-icon">📚</span> Chat with
+                    Notes</a>
+                <a href="upload.html" class="nav-item" data-page="upload"> <span class="nav-icon">📁</span> Upload
+                    Notes</a>
+                <a href="summary.html" class="nav-item" data-page="summary"> <span class="nav-icon">📋</span>
+                    Summary</a>
+                <a href="exam.html" class="nav-item" data-page="exam"> <span class="nav-icon">🎯</span> Exam
+                    Generator</a>
+                <a href="flashcards.html" class="nav-item" data-page="flashcards"> <span class="nav-icon">📇</span>
+                    Flashcards</a>
+                <a href="session.html" class="nav-item" data-page="session"> <span class="nav-icon">⏱️</span> Study
+                    Timer</a>
+                <a href="planner.html" class="nav-item" data-page="planner"> <span class="nav-icon">📅</span> Study
+                    Planner</a>
+            </nav>
+            <div class="sidebar-footer">
+                <button id="logout-btn">🚪 Logout</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <h1>⏱️ Study Timer</h1>
+                <p>Focus and track your study sessions</p>
+            </div>
+
+            <div class="page-body">
+                <div class="timer-layout">
+
+                    <div id="message-area"></div>
+
+                    <div class="timer-card">
+                        <input type="text" id="session-topic" class="topic-input"
+                            placeholder="What are you focusing on?" />
+
+                        <div class="timer-display" id="timer-display">00:00</div>
+
+                        <div class="timer-controls">
+                            <button class="control-btn btn-start" id="start-btn">▶ Start</button>
+                            <button class="control-btn btn-pause" id="pause-btn" style="display:none;">⏸ Pause</button>
+                            <button class="control-btn btn-stop" id="stop-btn" style="display:none;">⏹ Save &
+                                Stop</button>
+                        </div>
+                    </div>
+
+                    <div class="card history-card">
+                        <div class="card-header">
+                            <h3>📜 Recent Sessions</h3>
+                        </div>
+                        <div id="history-loading" style="padding: 20px; text-align: center; color: var(--text-muted);">
+                            Loading history...</div>
+                        <div id="history-list"></div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script>
+        Auth.requireAuth();
+        initSidebar('session');
+
+        // ── Timer Logic ───────────────────────────────────────────
+        let timerInterval = null;
+        let secondsElapsed = parseInt(localStorage.getItem('studyTimer_savedSeconds')) || 0;
+        let isRunning = localStorage.getItem('studyTimer_isRunning') === 'true';
+        let startTime = parseInt(localStorage.getItem('studyTimer_startTime')) || Date.now();
+
+        const display = document.getElementById('timer-display');
+        const startBtn = document.getElementById('start-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const topicInput = document.getElementById('session-topic');
+        const msgArea = document.getElementById('message-area');
+
+        // Restore topic
+        if (localStorage.getItem('studyTimer_topic')) {
+            topicInput.value = localStorage.getItem('studyTimer_topic');
+        }
+
+        function updateDisplayValue(totalSeconds) {
+            const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+            const s = (totalSeconds % 60).toString().padStart(2, '0');
+            display.textContent = `${m}:${s}`;
+        }
+
+        function updateDisplay() {
+            let current = secondsElapsed;
+            if (isRunning) {
+                current += Math.floor((Date.now() - startTime) / 1000);
+            }
+            updateDisplayValue(current);
+        }
+
+        function toggleControls(state) {
+            if (state === 'running') {
+                startBtn.style.display = 'none';
+                pauseBtn.style.display = 'block';
+                stopBtn.style.display = 'block';
+                topicInput.disabled = true;
+            } else if (state === 'paused') {
+                startBtn.style.display = 'block';
+                startBtn.textContent = '▶ Resume';
+                pauseBtn.style.display = 'none';
+                stopBtn.style.display = 'block';
+            } else {
+                // stopped
+                startBtn.style.display = 'block';
+                startBtn.textContent = '▶ Start';
+                pauseBtn.style.display = 'none';
+                stopBtn.style.display = 'none';
+                topicInput.disabled = false;
+            }
+        }
+
+        function startInterval() {
+            updateDisplay();
+            timerInterval = setInterval(updateDisplay, 1000);
+        }
+
+        // Initialize UI based on saved state
+        if (isRunning) {
+            toggleControls('running');
+            startInterval();
+        } else if (secondsElapsed > 0) {
+            toggleControls('paused');
+            updateDisplayValue(secondsElapsed);
+        }
+
+        startBtn.addEventListener('click', () => {
+            if (!isRunning) {
+                isRunning = true;
+                startTime = Date.now();
+                localStorage.setItem('studyTimer_isRunning', 'true');
+                localStorage.setItem('studyTimer_startTime', startTime);
+                localStorage.setItem('studyTimer_topic', topicInput.value.trim());
+
+                toggleControls('running');
+                startInterval();
+            }
+        });
+
+        pauseBtn.addEventListener('click', () => {
+            if (isRunning) {
+                isRunning = false;
+                clearInterval(timerInterval);
+
+                secondsElapsed += Math.floor((Date.now() - startTime) / 1000);
+                localStorage.setItem('studyTimer_savedSeconds', secondsElapsed);
+                localStorage.setItem('studyTimer_isRunning', 'false');
+
+                toggleControls('paused');
+                updateDisplayValue(secondsElapsed);
+            }
+        });
+
+        function clearTimerState() {
+            localStorage.removeItem('studyTimer_isRunning');
+            localStorage.removeItem('studyTimer_startTime');
+            localStorage.removeItem('studyTimer_savedSeconds');
+            localStorage.removeItem('studyTimer_topic');
+            secondsElapsed = 0;
+            isRunning = false;
+            clearInterval(timerInterval);
+        }
+
+        stopBtn.addEventListener('click', async () => {
+            // Need to calculate final time before clearing
+            let finalSeconds = secondsElapsed;
+            if (isRunning) {
+                finalSeconds += Math.floor((Date.now() - startTime) / 1000);
+            }
+
+            const durationMinutes = Math.floor(finalSeconds / 60);
+            const topic = topicInput.value.trim() || 'General Study';
+
+            // Clear local storage and state
+            clearTimerState();
+
+            // Reset UI immediately
+            updateDisplayValue(0);
+            toggleControls('stopped');
+            topicInput.value = '';
+
+            // Optional: immediately remove the global widget if it exists visually
+            const widget = document.getElementById('global-timer-widget');
+            if (widget) widget.remove();
+
+            if (durationMinutes < 1) {
+                msgArea.innerHTML = '<div class="alert alert-warning">Session too short to save (under 1 minute).</div>';
+                setTimeout(() => { msgArea.innerHTML = ''; }, 3000);
+                return;
+            }
+
+            try {
+                setLoading(stopBtn, true, '⏹ Save & Stop');
+                await apiCall('/sessions', {
+                    method: 'POST',
+                    body: JSON.stringify({ topic, durationMinutes })
+                });
+                msgArea.innerHTML = '<div class="alert alert-success">✅ Session saved successfully!</div>';
+                setTimeout(() => { msgArea.innerHTML = ''; }, 3000);
+                loadHistory();
+            } catch (error) {
+                msgArea.innerHTML = `<div class="alert alert-error">❌ ${error.message}</div>`;
+            } finally {
+                setLoading(stopBtn, false, '⏹ Save & Stop');
+            }
+        });
+
+        // ── Load History ──────────────────────────────────────────
+        async function loadHistory() {
+            const historyList = document.getElementById('history-list');
+            const loading = document.getElementById('history-loading');
+
+            try {
+                loading.style.display = 'block';
+                historyList.innerHTML = '';
+
+                const response = await apiCall('/sessions');
+                const data = response.data || [];
+
+                loading.style.display = 'none';
+
+                if (data.length === 0) {
+                    historyList.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">No recorded sessions yet. Get to work!</div>';
+                    return;
+                }
+
+                data.slice(0, 10).forEach(session => {
+                    const item = document.createElement('div');
+                    item.className = 'session-item';
+                    item.innerHTML = `
+                    <div>
+                        <div class="session-topic">${escapeHtml(session.topic)}</div>
+                        <div class="session-meta">${formatDate(session.createdAt)}</div>
+                    </div>
+                    <div class="session-duration">
+                        ${session.durationMinutes} min
+                    </div>
+                `;
+                    historyList.appendChild(item);
+                });
+
+            } catch (error) {
+                loading.style.display = 'none';
+                historyList.innerHTML = `<div style="padding: 20px; color: var(--danger); text-align:center;">Failed to load history: ${error.message}</div>`;
+            }
+        }
+
+        loadHistory();
+    </script>
+</body>
+
+</html>

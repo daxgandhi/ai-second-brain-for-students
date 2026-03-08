@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login — AI Second Brain</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="auth-page">
+  <div class="auth-bg"></div>
+  <div class="auth-grid"></div>
+
+  <div class="auth-card">
+    <!-- Logo -->
+    <div class="auth-logo">
+      <div class="brand">AI <span>Second Brain</span></div>
+      <div class="tagline">For Students</div>
+    </div>
+
+    <h2 class="auth-title">Welcome back 👋</h2>
+    <p class="auth-subtitle">Sign in to continue your learning journey</p>
+
+    <!-- Error/Success Messages -->
+    <div id="message-area"></div>
+
+    <!-- Login Form -->
+    <form id="login-form">
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" placeholder="you@university.edu" required autocomplete="email" />
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="Enter your password" required autocomplete="current-password" />
+      </div>
+      <button type="submit" id="login-btn" class="btn btn-primary btn-full">
+        Sign In
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      Don't have an account? <a href="register.html">Create one →</a>
+    </div>
+  </div>
+
+  <script src="js/utils.js"></script>
+  <script>
+    // Redirect if already logged in
+    Auth.redirectIfLoggedIn();
+
+    const form       = document.getElementById('login-form');
+    const loginBtn   = document.getElementById('login-btn');
+    const msgArea    = document.getElementById('message-area');
+
+    function showMessage(text, type) {
+      msgArea.innerHTML = `<div class="alert alert-${type}">${text}</div>`;
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msgArea.innerHTML = '';
+
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      setLoading(loginBtn, true);
+
+      try {
+        const data = await apiCall('/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ email, password })
+        });
+
+        Auth.save(data.token, data.user);
+        Toast.success('Login successful! Redirecting...');
+        setTimeout(() => { window.location.href = 'dashboard.html'; }, 800);
+
+      } catch (err) {
+        showMessage('❌ ' + err.message, 'error');
+        setLoading(loginBtn, false);
+      }
+    });
+  </script>
+</body>
+</html>
