@@ -204,6 +204,9 @@ To run the RAG Features locally (Chat with Notes), ensure you are running an Oll
 | Note Uploads | ✅ Complete | Parse and chunk PDF/Text (Store in MongoDB) |
 | Standard Chat | ✅ Complete | Conversational Gemini AI (History saved) |
 | Chat with Notes (RAG) | ✅ Complete | Vector search via ChromaDB + Ollama + Gemini |
+| Show RAG Sources | ✅ Complete | Displays exact chunks/documents cited |
+| Weak Topic Detection | ✅ Complete | Analyzes past quiz scores |
+| Study Recommendation | ✅ Complete | AI-driven actionable study plans |
 | Summary Generator | ✅ Complete | Summarize from text/notes (History saved) |
 | Flashcards Generator| ✅ Complete | Interactive swipable Deck (History saved) |
 | Exam/Paper Generator| ✅ Complete | Mid/End-Sem, MCQs (Results history saved) |
