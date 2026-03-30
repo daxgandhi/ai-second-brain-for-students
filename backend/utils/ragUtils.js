@@ -44,7 +44,8 @@ async function generateEmbedding(text) {
 async function getCollection() {
     return await client.getOrCreateCollection({
         name: COLLECTION_NAME,
-        metadata: { "hnsw:space": "cosine" }
+        metadata: { "hnsw:space": "cosine" },
+        embeddingFunction: null // We provide embeddings manually, so we don't need a default one
     });
 }
 
@@ -191,8 +192,37 @@ async function queryRelevantChunks(question, limit = 4, filterNoteId = null) {
     }
 }
 
+/**
+ * Delete all ChromaDB vectors associated with a given noteId
+ * Called when a note is deleted from MongoDB to keep vector store in sync
+ */
+async function deleteNoteFromChroma(noteId) {
+    try {
+        const collection = await getCollection();
+        const noteIdStr = noteId.toString();
+
+        // Get all chunks that belong to this note
+        const results = await collection.get({
+            where: { noteId: noteIdStr }
+        });
+
+        if (results && results.ids && results.ids.length > 0) {
+            await collection.delete({ ids: results.ids });
+            console.log(`[ChromaDB] Deleted ${results.ids.length} chunks for noteId: ${noteIdStr}`);
+            return results.ids.length;
+        } else {
+            console.log(`[ChromaDB] No chunks found for noteId: ${noteIdStr}`);
+            return 0;
+        }
+    } catch (error) {
+        console.error("Error deleting note from ChromaDB:", error);
+        return 0;
+    }
+}
+
 module.exports = {
     chunkText,
     ingestDocumentToChroma,
-    queryRelevantChunks
+    queryRelevantChunks,
+    deleteNoteFromChroma
 };

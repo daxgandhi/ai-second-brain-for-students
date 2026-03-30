@@ -21,9 +21,22 @@ const protect = async (req, res, next) => {
       // Attach user to request (minus password)
       req.user = await User.findById(decoded.id).select('-password');
 
+      if (!req.user) {
+        return res.status(401).json({ message: 'Not authorized, user no longer exists' });
+      }
+
       next(); // Proceed to the route handler
     } catch (error) {
-      return res.status(401).json({ message: 'Not authorized, token failed' });
+      console.error('Auth error:', error.message);
+      let message = 'Not authorized, token failed';
+      
+      if (error.name === 'TokenExpiredError') {
+        message = 'Session expired, please login again';
+      } else if (error.name === 'JsonWebTokenError') {
+        message = 'Invalid token, please login again';
+      }
+
+      return res.status(401).json({ message });
     }
   }
 

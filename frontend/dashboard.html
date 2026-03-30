@@ -183,6 +183,7 @@
         <a href="upload.html" class="nav-item" data-page="upload"> <span class="nav-icon">📁</span> Upload Notes</a>
         <a href="summary.html" class="nav-item" data-page="summary"> <span class="nav-icon">📋</span> Summary</a>
         <a href="exam.html" class="nav-item" data-page="exam"> <span class="nav-icon">🎯</span> Exam Generator</a>
+        <a href="exam-history.html" class="nav-item" data-page="exam-history"> <span class="nav-icon">📜</span> Exam History</a>
         <a href="flashcards.html" class="nav-item" data-page="flashcards"> <span class="nav-icon">📇</span>
           Flashcards</a>
         <a href="session.html" class="nav-item" data-page="session"> <span class="nav-icon">⏱️</span> Study Timer</a>
@@ -239,6 +240,17 @@
               <div class="stat-value">Plan</div>
               <div class="stat-label">Study Planner</div>
             </div>
+          </div>
+        </div>
+
+        <!-- AI Study Recommendation Engine -->
+        <div id="ai-recommendation-section" style="margin-bottom: 32px; display: none;">
+          <h3 style="margin: 28px 0 16px; display: flex; align-items: center; gap: 8px;">
+             ⭐ AI Study Recommendation Engine
+             <span style="font-size: 0.8rem; background: rgba(59, 130, 246, 0.1); color: #3b82f6; padding: 4px 8px; border-radius: var(--radius-sm); font-weight: 600;">Most Important</span>
+          </h3>
+          <div class="card" style="background: var(--bg-card); border-left: 4px solid #8b5cf6;" id="ai-recommendation-content">
+            <div style="padding: 16px; color: var(--text-muted);">Analyzing your study pattern...</div>
           </div>
         </div>
 
@@ -359,6 +371,27 @@
           }
         } catch (analyticsErr) {
           console.error("Failed to fetch analytics for dashboard:", analyticsErr);
+        }
+
+        // Fetch AI Recommendation
+        try {
+          const recData = await apiCall('/analytics/recommendation');
+          if (recData.success && recData.recommendation) {
+            document.getElementById('ai-recommendation-section').style.display = 'block';
+            
+            const lines = recData.recommendation.split('\n');
+            const mainText = lines[0];
+            const bullets = lines.slice(1).map(l => `<div style="margin-top: 8px; font-family: monospace; color: var(--text-secondary);">${escapeHtml(l)}</div>`).join('');
+
+            document.getElementById('ai-recommendation-content').innerHTML = `
+              <div style="padding: 20px;">
+                <div style="font-size: 1.05rem; font-weight: 600; color: var(--text-primary); margin-bottom: 12px; font-family: monospace;">${escapeHtml(mainText)}</div>
+                ${bullets}
+              </div>
+            `;
+          }
+        } catch (recErr) {
+            console.error("Failed to fetch AI recommendation:", recErr);
         }
 
         if (notes.length === 0) {

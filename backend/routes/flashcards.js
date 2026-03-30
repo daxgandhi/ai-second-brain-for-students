@@ -7,7 +7,18 @@ const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/auth');
 const Note = require('../models/Note');
+const FlashcardDeck = require('../models/FlashcardDeck');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+
+// ── GET /api/flashcards/history (Protected) ───────────────────
+router.get('/history', protect, async (req, res) => {
+  try {
+    const history = await FlashcardDeck.find({ user: req.user.id }).sort({ createdAt: -1 });
+    res.json(history);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch flashcard history' });
+  }
+});
 
 // ── POST /api/flashcards  (Protected) ─────────────────────────
 router.post('/', protect, async (req, res) => {
@@ -23,7 +34,7 @@ router.post('/', protect, async (req, res) => {
 
         // If noteId is provided, fetch the note
         if (noteId) {
-            const note = await Note.findOne({ _id: noteId, user: req.user._id });
+            const note = await Note.findOne({ _id: noteId, user: req.user.id });
             if (!note) {
                 return res.status(404).json({ message: 'Note not found' });
             }
@@ -66,15 +77,26 @@ Return ONLY a valid JSON array where each object has the following keys:
         let flashcards;
         try {
             flashcards = JSON.parse(output);
+            if (!Array.isArray(flashcards)) throw new Error("Output is not an array");
         } catch (parseError) {
             console.error('Failed to parse Gemini output:', output);
             return res.status(500).json({ message: 'Failed to generate required format from AI' });
         }
 
+        const topicName = sourceTopic || 'Custom Text';
+
+        // Save flashcard deck to DB
+        const deck = await FlashcardDeck.create({
+            user: req.user.id,
+            topic: topicName,
+            cards: flashcards
+        });
+
         res.json({
-            topic: sourceTopic || 'Custom Text',
+            topic: topicName,
             flashcards,
-            totalCards: flashcards.length
+            totalCards: flashcards.length,
+            id: deck._id
         });
 
     } catch (error) {

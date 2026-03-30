@@ -179,6 +179,7 @@
                     Summary</a>
                 <a href="exam.html" class="nav-item" data-page="exam"> <span class="nav-icon">🎯</span> Exam
                     Generator</a>
+                <a href="exam-history.html" class="nav-item" data-page="exam-history"> <span class="nav-icon">📜</span> Exam History</a>
                 <a href="flashcards.html" class="nav-item" data-page="flashcards"> <span class="nav-icon">📇</span>
                     Flashcards</a>
                 <a href="session.html" class="nav-item" data-page="session"> <span class="nav-icon">⏱️</span> Study
@@ -287,6 +288,17 @@
                                 <div class="progress-text" id="card-progress">1 / 10</div>
                                 <button class="control-btn" id="next-btn" title="Next Card">→</button>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- History Section -->
+                    <div id="history-section" style="grid-column: 1 / -1; margin-top: 40px; border-top: 1px solid var(--border); padding-top: 24px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <h2>🕰️ Saved Decks</h2>
+                            <button class="btn btn-secondary" onclick="loadHistory()">🔄 Refresh</button>
+                        </div>
+                        <div id="history-list" style="margin-top: 16px; display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
+                            <p style="color:var(--text-muted);">Loading saved decks...</p>
                         </div>
                     </div>
                 </div>
@@ -470,8 +482,59 @@
         `;
             } finally {
                 setLoading(generateBtn, false);
+                // Refresh history when new deck is generated
+                if (!err || err.message === undefined) {
+                    loadHistory();
+                }
             }
         });
+
+        // ── History Logic ───────────────────────────────────────────
+        async function loadHistory() {
+            try {
+                const res = await apiCall('/flashcards/history');
+                const list = document.getElementById('history-list');
+                list.innerHTML = '';
+                if (res.length === 0) {
+                    list.innerHTML = '<p style="color:var(--text-muted);">No saved decks found.</p>';
+                    return;
+                }
+                res.forEach(item => {
+                    list.innerHTML += `<div class="card" style="cursor:pointer; border: 1px solid var(--border); padding: 16px; border-radius: var(--radius-sm); transition: border-color 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'" onclick="viewHistoryItem('${item._id}')">
+                        <div style="display:flex; justify-content:space-between; margin-bottom: 6px;">
+                            <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary);"><span style="margin-right:6px;">📇</span> ${escapeHtml(item.topic)}</div>
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">${formatDate(item.createdAt)}</div>
+                        <div style="font-size: 0.85rem; color: var(--accent-bright); font-weight: 600;">${item.cards.length} Cards</div>
+                    </div>`;
+                });
+                window._flashcardHistory = res;
+            } catch (err) {
+                console.error('Failed to load history', err);
+                document.getElementById('history-list').innerHTML = '<p style="color:var(--danger);">Failed to load history.</p>';
+            }
+        }
+
+        function viewHistoryItem(id) {
+            const item = window._flashcardHistory.find(x => x._id === id);
+            if (!item || !item.cards || item.cards.length === 0) return;
+
+            deck = item.cards;
+            deckTitle.textContent = `Deck: ${item.topic}`;
+            currentIndex = 0;
+            isFlipped = false;
+
+            emptyState.style.display = 'none';
+            workspace.style.display = 'block';
+
+            updateCardView();
+            
+            // Scroll up to workspace
+            document.querySelector('.flashcard-layout').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Call loadHistory on page load
+        loadHistory();
     </script>
 </body>
 

@@ -170,6 +170,7 @@
         <a href="upload.html" class="nav-item" data-page="upload"> <span class="nav-icon">📁</span> Upload Notes</a>
         <a href="summary.html" class="nav-item" data-page="summary"> <span class="nav-icon">📋</span> Summary</a>
         <a href="exam.html" class="nav-item" data-page="exam"> <span class="nav-icon">🎯</span> Exam Generator</a>
+        <a href="exam-history.html" class="nav-item" data-page="exam-history"> <span class="nav-icon">📜</span> Exam History</a>
         <a href="flashcards.html" class="nav-item" data-page="flashcards"> <span class="nav-icon">📇</span>
           Flashcards</a>
         <a href="session.html" class="nav-item" data-page="session"> <span class="nav-icon">⏱️</span> Study Timer</a>
@@ -193,11 +194,50 @@
             <h3 style="margin-bottom:20px;">Generate Questions</h3>
             <div id="message-area"></div>
 
-            <div class="form-group">
+            <div class="form-group" style="margin-bottom: 24px;">
+              <label>Source Type</label>
+              <div style="display:flex; gap:12px; background:var(--bg-secondary); padding:6px; border-radius:var(--radius-sm); border:1px solid var(--border);">
+                <label style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:10px; cursor:pointer; background:var(--bg-card); border-radius:6px; border:1px solid var(--accent); color:var(--text-primary); margin:0;" id="label-source-topic">
+                  <input type="radio" name="source" value="topic" checked style="display:none;" onchange="toggleSource()">
+                  <strong>📚 By Topic</strong>
+                </label>
+                <label style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:10px; cursor:pointer; background:transparent; border-radius:6px; border:1px solid transparent; color:var(--text-muted); margin:0;" id="label-source-note">
+                  <input type="radio" name="source" value="note" style="display:none;" onchange="toggleSource()">
+                  <strong>📄 From Note</strong>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group" id="container-topic">
               <label for="topic">Topic / Subject *</label>
               <input type="text" id="topic" placeholder="e.g. Photosynthesis, World War II, Newton's Laws..." />
             </div>
+
+            <div class="form-group" id="container-note" style="display:none;">
+              <label for="note-select">Select Uploaded Note *</label>
+              <select id="note-select">
+                <option value="">Loading notes...</option>
+              </select>
+            </div>
             <div class="form-group">
+              <label for="exam-type">Exam Type</label>
+              <select id="exam-type" onchange="toggleNumQuestions()">
+                <option value="mcq" selected>Standard Practice (MCQ)</option>
+                <option value="mid_sem">Parul University - Mid Semester</option>
+                <option value="end_sem">Parul University - End Semester</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="difficulty-container">
+              <label for="difficulty">Difficulty Level</label>
+              <select id="difficulty">
+                <option value="easy">🟢 Easy</option>
+                <option value="medium" selected>🟡 Medium</option>
+                <option value="hard">🔴 Hard</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="num-questions-container">
               <label for="num-questions">Number of Questions</label>
               <select id="num-questions">
                 <option value="3">3 Questions</option>
@@ -207,8 +247,8 @@
               </select>
             </div>
 
-            <button id="generate-btn" class="btn btn-primary btn-full">
-              🎯 Generate MCQs
+            <button id="generate-btn" class="btn btn-primary btn-full" onclick="updateBtnLabel()">
+              🎯 Generate Exam
             </button>
 
             <hr class="divider" />
@@ -244,6 +284,13 @@
 
             <!-- MCQ List -->
             <div id="mcq-list" class="mcq-list"></div>
+
+            <!-- University Paper Container -->
+            <div id="paper-container" style="display:none; background: #fff; color: #000; padding: 40px; border-radius: var(--radius); border: 1px solid var(--border); font-family: 'Times New Roman', serif;">
+            </div>
+            <div id="print-btn-container" style="display:none; margin-top: 16px; text-align: right;">
+              <button class="btn btn-secondary" onclick="printPaper()">🖨️ Print / Save as PDF</button>
+            </div>
           </div>
         </div>
       </div>
@@ -264,35 +311,134 @@
     const questionsEmpty = document.getElementById('questions-empty');
     const scoreTracker = document.getElementById('score-tracker');
     const msgArea = document.getElementById('message-area');
+    const paperContainer = document.getElementById('paper-container');
 
-    // ── Generate MCQs ─────────────────────────────────────────
+    function toggleNumQuestions() {
+      const examType = document.getElementById('exam-type').value;
+      const isMcq = examType === 'mcq';
+      document.getElementById('num-questions-container').style.display = isMcq ? 'block' : 'none';
+      document.getElementById('difficulty-container').style.display = isMcq ? 'block' : 'none';
+    }
+
+    // ── Load notes for dropdown ───────────────────────────────
+    async function loadNotes() {
+      try {
+        const res = await apiCall('/notes');
+        const select = document.getElementById('note-select');
+        select.innerHTML = '<option value="">-- Choose a note --</option>';
+        if (res.notes && res.notes.length > 0) {
+          res.notes.forEach(note => {
+            select.innerHTML += `<option value="${note._id}">${escapeHtml(note.title)}</option>`;
+          });
+        } else {
+          select.innerHTML = '<option value="">No notes found. Upload one first!</option>';
+        }
+      } catch (e) {
+        console.error('Failed to load notes', e);
+      }
+    }
+    loadNotes();
+
+    function toggleSource() {
+      const source = document.querySelector('input[name="source"]:checked').value;
+      const labelTopic = document.getElementById('label-source-topic');
+      const labelNote = document.getElementById('label-source-note');
+      
+      if (source === 'topic') {
+        document.getElementById('container-topic').style.display = 'block';
+        document.getElementById('container-note').style.display = 'none';
+        
+        labelTopic.style.background = 'var(--bg-card)';
+        labelTopic.style.borderColor = 'var(--accent)';
+        labelTopic.style.color = 'var(--text-primary)';
+        
+        labelNote.style.background = 'transparent';
+        labelNote.style.borderColor = 'transparent';
+        labelNote.style.color = 'var(--text-muted)';
+      } else {
+        document.getElementById('container-topic').style.display = 'none';
+        document.getElementById('container-note').style.display = 'block';
+        
+        labelNote.style.background = 'var(--bg-card)';
+        labelNote.style.borderColor = 'var(--accent)';
+        labelNote.style.color = 'var(--text-primary)';
+        
+        labelTopic.style.background = 'transparent';
+        labelTopic.style.borderColor = 'transparent';
+        labelTopic.style.color = 'var(--text-muted)';
+      }
+    }
+
+    function updateBtnLabel() {
+      // Called on button click before generate logic, handled via event listener below
+    }
+
+    function printPaper() {
+      const paperHtml = document.getElementById('paper-container').innerHTML;
+      const win = window.open('', '_blank');
+      win.document.write(`<!DOCTYPE html><html><head><title>Exam Paper</title></head><body>${paperHtml}</body></html>`);
+      win.document.close();
+      win.focus();
+      win.print();
+    }
+
+    // ── Generate MCQs or Paper ────────────────────────────────
     generateBtn.addEventListener('click', async () => {
+      const source = document.querySelector('input[name="source"]:checked').value;
       const topic = document.getElementById('topic').value.trim();
+      const noteId = document.getElementById('note-select').value;
+      const examType = document.getElementById('exam-type').value;
       const numQuestions = document.getElementById('num-questions').value;
+      const difficulty = document.getElementById('difficulty').value;
       msgArea.innerHTML = '';
 
-      if (!topic) {
+      if (source === 'topic' && !topic) {
         msgArea.innerHTML = '<div class="alert alert-error">❌ Please enter a topic</div>';
+        return;
+      }
+      if (source === 'note' && !noteId) {
+        msgArea.innerHTML = '<div class="alert alert-error">❌ Please select a note</div>';
         return;
       }
 
       setLoading(generateBtn, true);
       questionsEmpty.style.display = 'none';
-      mcqList.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">⏳ Generating questions...</div>';
+      mcqList.style.display = 'none';
+      paperContainer.style.display = 'none';
+      scoreTracker.style.display = 'none';
+      document.getElementById('score-banner').style.display = 'none';
+
+      mcqList.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">⏳ Generating exam based on selected source... this may take up to 30 seconds.</div>';
+      mcqList.style.display = 'flex';
 
       try {
+        const bodyData = { examType, numQuestions, difficulty };
+        if (source === 'topic') bodyData.topic = topic;
+        if (source === 'note') bodyData.noteId = noteId;
+
         const data = await apiCall('/exam', {
           method: 'POST',
-          body: JSON.stringify({ topic, numQuestions })
+          body: JSON.stringify(bodyData)
         });
 
-        questions = data.questions;
-        answered = {};
-        correctCount = 0;
+        mcqList.innerHTML = '';
 
-        renderQuestions();
-        scoreTracker.style.display = 'block';
-        updateScore();
+        if (examType === 'mcq') {
+          questions = data.questions;
+          answered = {};
+          correctCount = 0;
+
+          renderQuestions();
+          mcqList.style.display = 'flex';
+          scoreTracker.style.display = 'block';
+          updateScore();
+        } else {
+          // Mid Sem or End Sem Paper rendered natively in #paper-container
+          paperContainer.innerHTML = data.paperHtml;
+          paperContainer.style.display = 'block';
+          mcqList.style.display = 'none';
+          document.getElementById('print-btn-container').style.display = 'block';
+        }
 
       } catch (err) {
         msgArea.innerHTML = `<div class="alert alert-error">❌ ${err.message}</div>`;
@@ -373,9 +519,48 @@
 
     function showFinalScore() {
       const banner = document.getElementById('score-banner');
-      document.getElementById('final-score').textContent = `${correctCount}/${questions.length}`;
+      const total = questions.length;
+      const pct = Math.round((correctCount / total) * 100);
+
+      // Determine result message + color
+      let emoji, msg, color;
+      if (pct >= 80) { emoji = '🏆'; msg = 'Excellent work!';     color = '#10b981'; }
+      else if (pct >= 60) { emoji = '👍'; msg = 'Good job!';       color = '#3b82f6'; }
+      else if (pct >= 40) { emoji = '📚'; msg = 'Keep practising'; color = '#f59e0b'; }
+      else               { emoji = '💪'; msg = 'Don\'t give up!';  color = '#ef4444'; }
+
+      document.getElementById('final-score').textContent = `0/${total}`;
       banner.style.display = 'block';
       banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      // Append result label if not present
+      let label = document.getElementById('score-result-label');
+      if (!label) {
+        label = document.createElement('div');
+        label.id = 'score-result-label';
+        label.style.cssText = 'margin-top:10px;font-size:1.1rem;font-weight:600;';
+        banner.querySelector('#final-score').parentNode.appendChild(label);
+      }
+      label.style.color = color;
+      label.textContent = '';
+
+      // Animated counter
+      let displayed = 0;
+      const duration = 900;
+      const stepTime = Math.max(20, Math.floor(duration / (correctCount || 1)));
+      const timer = setInterval(() => {
+        displayed++;
+        document.getElementById('final-score').textContent = `${displayed}/${total}`;
+        if (displayed >= correctCount) {
+          clearInterval(timer);
+          document.getElementById('final-score').textContent = `${correctCount}/${total}`;
+          // Animate label appearing
+          label.style.transition = 'opacity 0.4s ease';
+          label.style.opacity = '0';
+          label.textContent = `${emoji} ${pct}% — ${msg}`;
+          setTimeout(() => { label.style.opacity = '1'; }, 50);
+        }
+      }, stepTime);
 
       // Save exam result to backend
       submitScore();

@@ -264,6 +264,7 @@
         <a href="upload.html" class="nav-item" data-page="upload"> <span class="nav-icon">📁</span> Upload Notes</a>
         <a href="summary.html" class="nav-item" data-page="summary"> <span class="nav-icon">📋</span> Summary</a>
         <a href="exam.html" class="nav-item" data-page="exam"> <span class="nav-icon">🎯</span> Exam Generator</a>
+        <a href="exam-history.html" class="nav-item" data-page="exam-history"> <span class="nav-icon">📜</span> Exam History</a>
         <a href="flashcards.html" class="nav-item" data-page="flashcards"> <span class="nav-icon">📇</span>
           Flashcards</a>
         <a href="session.html" class="nav-item" data-page="session"> <span class="nav-icon">⏱️</span> Study Timer</a>
@@ -321,6 +322,17 @@
             </div>
           </div>
         </div>
+
+        <!-- History Section -->
+        <div id="history-section" style="margin-top: 40px; border-top: 1px solid var(--border); padding-top: 24px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h2>🕰️ Saved Study Plans</h2>
+                <button class="btn btn-secondary" onclick="loadHistory()">🔄 Refresh</button>
+            </div>
+            <div id="history-list" style="margin-top: 16px; display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
+                <p style="color:var(--text-muted);">Loading saved plans...</p>
+            </div>
+        </div>
       </div>
     </main>
   </div>
@@ -365,7 +377,7 @@
         });
 
         renderPlan(data);
-
+        loadHistory(); // Refresh history list
       } catch (err) {
         msgArea.innerHTML = `<div class="alert alert-error">❌ ${err.message}</div>`;
         planOutput.innerHTML = '';
@@ -450,6 +462,45 @@
         </div>
       `;
     }
+
+    // ── History Logic ───────────────────────────────────────────
+    async function loadHistory() {
+      try {
+        const res = await apiCall('/planner/history');
+        const list = document.getElementById('history-list');
+        list.innerHTML = '';
+        if (res.length === 0) {
+          list.innerHTML = '<p style="color:var(--text-muted);">No saved plans found.</p>';
+          return;
+        }
+        res.forEach(item => {
+           list.innerHTML += `<div class="card" style="cursor:pointer; border: 1px solid var(--border); padding: 16px; border-radius: var(--radius-sm); transition: border-color 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'" onclick="viewHistoryItem('${item._id}')">
+             <div style="display:flex; justify-content:space-between; margin-bottom: 6px;">
+               <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary);"><span style="margin-right:6px;">📅</span> Exam: ${new Date(item.examDate).toLocaleDateString()}</div>
+               <div style="font-size: 0.75rem; color: var(--text-muted);">${formatDate(item.createdAt)}</div>
+             </div>
+             <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">${item.subjects.slice(0, 3).join(', ')}${item.subjects.length > 3 ? '...' : ''}</p>
+             <div style="font-size: 0.75rem; color: var(--accent-bright); font-weight: 600;">${item.daysLeft} Days • ${item.hoursPerDay}h/day</div>
+           </div>`;
+        });
+        window._plannerHistory = res;
+      } catch (err) {
+        console.error('Failed to load history', err);
+        document.getElementById('history-list').innerHTML = '<p style="color:var(--danger);">Failed to load history.</p>';
+      }
+    }
+
+    function viewHistoryItem(id) {
+       const item = window._plannerHistory.find(x => x._id === id);
+       if (!item) return;
+       renderPlan(item);
+       
+       // Scroll to plan
+       planOutput.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Call loadHistory on page load
+    loadHistory();
   </script>
 </body>
 

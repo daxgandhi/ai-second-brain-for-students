@@ -14,32 +14,60 @@ ai-second-brain/
 │   ├── login.html             ← Login page
 │   ├── register.html          ← Registration page
 │   ├── dashboard.html         ← User dashboard
+│   ├── analytics.html         ← Study analytics dashboard
 │   ├── chat.html              ← AI Chat interface
-│   ├── upload.html            ← Upload notes (PDF/text)
-│   ├── summary.html           ← Summary generator
+│   ├── exam-history.html      ← Past exam results
 │   ├── exam.html              ← MCQ exam generator
+│   ├── flashcards.html        ← AI-generated flashcards
 │   ├── planner.html           ← Study planner
+│   ├── rag.html               ← Chat with Notes (RAG)
+│   ├── session.html           ← Study session tracker
+│   ├── sidebar.html           ← Common sidebar component
+│   ├── summary.html           ← Summary generator
+│   ├── upload.html            ← Upload notes (PDF/text)
 │   ├── css/
 │   │   └── style.css          ← Global styles (dark theme)
 │   └── js/
+│       ├── analytics.js
+│       ├── auth.js
+│       ├── chat.js
+│       ├── exam.js
+│       ├── flashcards.js
+│       ├── notes.js
+│       ├── planner.js
+│       ├── rag.js
+│       ├── sessions.js
+│       ├── summary.js
 │       └── utils.js           ← Shared JS utilities
 │
 └── backend/                   ← Node.js Express server
     ├── server.js              ← Main entry point
+    ├── test_auth_logic.js     ← Authentication test script
+    ├── .env                   ← Environment variables
     ├── .env.example           ← Environment variables template
     ├── package.json
+    ├── package-lock.json
     ├── middleware/
     │   └── auth.js            ← JWT authentication middleware
     ├── models/
-    │   ├── User.js            ← User schema (Mongoose)
-    │   └── Note.js            ← Notes/files schema (Mongoose)
+    │   ├── ChatMessage.js     ← Chat history schema
+    │   ├── ExamResult.js      ← Exam results schema
+    │   ├── Note.js            ← Notes/files schema
+    │   ├── StudySession.js    ← Study session schema
+    │   └── User.js            ← User schema
     ├── routes/
+    │   ├── analytics.js       ← GET /analytics routes
     │   ├── auth.js            ← POST /register, POST /login, GET /me
+    │   ├── chat.js            ← POST /chat routes
+    │   ├── exam.js            ← POST /exam routes
+    │   ├── flashcards.js      ← POST /flashcards routes
     │   ├── notes.js           ← POST /upload, GET /, DELETE /:id
-    │   ├── chat.js            ← POST /chat
-    │   ├── summary.js         ← POST /summary
-    │   ├── exam.js            ← POST /exam
-    │   └── planner.js         ← POST /planner
+    │   ├── planner.js         ← POST /planner routes
+    │   ├── rag.js             ← RAG chat routes
+    │   ├── sessions.js        ← Session tracking routes
+    │   └── summary.js         ← POST /summary routes
+    ├── utils/
+    │   └── ragUtils.js        ← RAG utility functions (ChromaDB/Embeddings)
     └── uploads/               ← Created automatically for PDF storage
 ```
 

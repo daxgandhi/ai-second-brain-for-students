@@ -37,13 +37,11 @@ router.post('/', protect, async (req, res) => {
 
         let context = "";
         if (relevantChunks && relevantChunks.length > 0) {
-            context = "Context - Here are the most relevant text chunks from the user's uploaded notes:\n\n";
+            context = "Context from uploaded notes:\n";
             relevantChunks.forEach((item, index) => {
-                const meta = item.metadata || {};
-                context += `--- Chunk ${index + 1} (From Note: ${meta.title || 'Unknown'}) ---\n`;
-                context += `${item.text}\n\n`;
+                context += `[Note: ${item.metadata?.title || 'Unknown'}]\n${item.text}\n\n`;
+                console.log(`[RAG Debug] Chunk ${index + 1} content: ${item.text}`);
             });
-            context += `\nEnd of context.\n\n`;
             console.log(`[RAG] Retrieved ${relevantChunks.length} relevant chunks for context.`);
         } else {
             console.log(`[RAG] No relevant chunks found in Vector Search.`);
@@ -55,13 +53,24 @@ router.post('/', protect, async (req, res) => {
             context = context.substring(0, 4000) + "\n...[Context truncated due to size limits]\n\nEnd of context.\n\n";
         }
 
-        const prompt = `System: You are an AI study assistant. Answer the user's question based STRICTLY and ONLY on the Context provided below. If the answer is not in the context, explicitly say that you do not know based on the provided notes. Be concise and helpful.
+        const prompt = `System Instructions:
+You are a strict, helpful study assistant. 
+Use the following "Context" from the user's notes to answer their question. 
 
+### CONSTRAINTS:
+1. USE ONLY THE PROVIDED CONTEXT. DO NOT USE OUTSIDE KNOWLEDGE.
+2. USE THE EXACT WORDING AND ANALOGIES from the notes where possible.
+3. If the answer is not CLEARLY in the context, say "This information is not present in your notes."
+4. DO NOT define terms like "labeled" using your own knowledge (e.g., do not mention "positive or negative" if it's not in the context).
+
+Context from uploaded notes:
 ${context}
-User Question: ${message.trim()}`;
+
+User Question: ${message.trim()}
+Answer (be brief and extractive):`;
 
         // 2. Call Local Ollama instance
-        // Make sure Ollama is running and you have pulled a model (e.g., 'ollama run llama3')
+        console.log(`[RAG Debug] Prompt: ${prompt.substring(0, 300)}...`);
         const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama3'; // Default to llama3, can be changed in .env
 
         try {
@@ -84,6 +93,7 @@ User Question: ${message.trim()}`;
 
             const data = await response.json();
             const reply = data.response;
+            console.log(`[RAG Debug] AI Reply: "${reply.substring(0, 100)}..."`);
             const contextUsed = relevantChunks.length > 0;
 
             // Save AI Reply
@@ -95,9 +105,16 @@ User Question: ${message.trim()}`;
                 contextUsed: contextUsed
             });
 
+            // Build sources list for frontend display
+            const sources = relevantChunks.map(chunk => ({
+                title: chunk.metadata?.title || 'Unknown Note',
+                preview: chunk.text.substring(0, 120).trim() + (chunk.text.length > 120 ? '...' : '')
+            }));
+
             res.json({
                 reply,
-                contextUsed: contextUsed, // Helpful for UI to know if it actually used notes
+                contextUsed: contextUsed,
+                sources: contextUsed ? sources : [],
                 timestamp: new Date().toISOString()
             });
 

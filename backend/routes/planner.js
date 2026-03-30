@@ -6,8 +6,19 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/auth');
+const StudyPlan = require('../models/StudyPlan');
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+
+// ── GET /api/planner/history (Protected) ──────────────────────
+router.get('/history', protect, async (req, res) => {
+  try {
+    const history = await StudyPlan.find({ user: req.user.id }).sort({ createdAt: -1 });
+    res.json(history);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch planner history' });
+  }
+});
 
 // ── POST /api/planner  (Protected) ───────────────────────────
 router.post('/', protect, async (req, res) => {
@@ -61,9 +72,21 @@ Return ONLY a valid JSON object matching exactly this structure:
     const result = await model.generateContent(prompt);
     let output = result.response.text();
     output = output.replace(/```json/gi, '').replace(/```/g, '').trim();
-    const plan = JSON.parse(output);
+    const planData = JSON.parse(output);
 
-    res.json(plan);
+    // Save plan to DB
+    const plan = await StudyPlan.create({
+      user: req.user.id,
+      examDate: planData.examDate || examDate,
+      daysLeft: planData.daysLeft || daysLeft,
+      subjects: planData.subjects || subjects.split(',').map(s => s.trim()),
+      totalStudyHours: planData.totalStudyHours || (daysLeft * hoursPerDay),
+      hoursPerDay: planData.hoursPerDay || hoursPerDay,
+      schedule: planData.schedule || [],
+      tips: planData.tips || []
+    });
+
+    res.json({ ...planData, id: plan._id });
 
   } catch (error) {
     console.error('Planner error:', error);

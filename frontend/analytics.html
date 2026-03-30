@@ -147,6 +147,7 @@
                     Summary</a>
                 <a href="exam.html" class="nav-item" data-page="exam"> <span class="nav-icon">🎯</span> Exam
                     Generator</a>
+                <a href="exam-history.html" class="nav-item" data-page="exam-history"> <span class="nav-icon">📜</span> Exam History</a>
                 <a href="flashcards.html" class="nav-item" data-page="flashcards"> <span class="nav-icon">📇</span>
                     Flashcards</a>
                 <a href="session.html" class="nav-item" data-page="session"> <span class="nav-icon">⏱️</span> Study
@@ -197,20 +198,28 @@
                     </div>
 
                     <!-- Charts Area -->
-                    <div class="charts-container">
-                        <!-- Main Activity Line Chart -->
+                    <div class="charts-container" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+                        <!-- Bar Chart: Topic Accuracy -->
                         <div class="chart-card">
-                            <h3>Study Activity (Last 7 Days)</h3>
+                            <h3>Topic Accuracy</h3>
                             <div class="chart-wrapper">
-                                <canvas id="activityChart"></canvas>
+                                <canvas id="topicAccuracyChart"></canvas>
                             </div>
                         </div>
 
-                        <!-- Notes Type Pie Chart -->
+                        <!-- Line Chart: Study Progress -->
                         <div class="chart-card">
-                            <h3>Notes Distribution</h3>
+                            <h3>Study Progress</h3>
                             <div class="chart-wrapper">
-                                <canvas id="distributionChart"></canvas>
+                                <canvas id="studyProgressChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Pie Chart: Correct vs Wrong -->
+                        <div class="chart-card">
+                            <h3>Correct vs Wrong</h3>
+                            <div class="chart-wrapper">
+                                <canvas id="correctVsWrongChart"></canvas>
                             </div>
                         </div>
                     </div>
@@ -251,71 +260,67 @@
                 document.getElementById('analytics-loading').style.display = 'none';
                 document.getElementById('analytics-content').style.display = 'block';
 
-                // 2. Render Activity Chart (Bar Chart)
-                const actCtx = document.getElementById('activityChart').getContext('2d');
-                const activityData = data.charts.activity;
-
-                activityChartInstance = new Chart(actCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: activityData.labels,
-                        datasets: [{
-                            label: 'Study Minutes',
-                            data: activityData.datasets[0].data,
-                            backgroundColor: 'rgba(139, 92, 246, 0.8)',
-                            borderColor: '#8b5cf6',
-                            borderWidth: 1,
-                            borderRadius: 4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false }
+                // 2. Render Topic Accuracy Chart (Bar Chart)
+                const topicCtx = document.getElementById('topicAccuracyChart').getContext('2d');
+                const topicData = data.charts.topicAccuracy;
+                if (topicData && topicData.labels.length > 0) {
+                    new Chart(topicCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: topicData.labels,
+                            datasets: [{
+                                label: 'Accuracy %',
+                                data: topicData.datasets[0].data,
+                                backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                                borderColor: '#3b82f6',
+                                borderWidth: 1,
+                                borderRadius: 4
+                            }]
                         },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: { color: 'rgba(255, 255, 255, 0.05)' }
-                            },
-                            x: {
-                                grid: { display: false }
-                            }
-                        }
-                    }
-                });
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } }
+                    });
+                }
 
-                // 3. Render Distribution Chart (Doughnut)
-                const distCtx = document.getElementById('distributionChart').getContext('2d');
-                const distData = data.charts.distribution;
+                // 3. Render Study Progress Chart (Line Chart)
+                const progressCtx = document.getElementById('studyProgressChart').getContext('2d');
+                const progressData = data.charts.activity;
+                if (progressData && progressData.labels.length > 0) {
+                    new Chart(progressCtx, {
+                        type: 'line',
+                        data: {
+                            labels: progressData.labels,
+                            datasets: [{
+                                label: 'Study Minutes',
+                                data: progressData.datasets[0].data,
+                                backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                                borderColor: '#8b5cf6',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+                    });
+                }
 
-                distributionChartInstance = new Chart(distCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: distData.labels,
-                        datasets: [{
-                            data: distData.datasets[0].data,
-                            backgroundColor: [
-                                '#ef4444', // Red for PDF
-                                '#3b82f6'  // Blue for Text
-                            ],
-                            borderWidth: 0,
-                            hoverOffset: 4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        cutout: '70%',
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: { padding: 20 }
-                            }
-                        }
-                    }
-                });
+                // 4. Render Correct vs Wrong Chart (Pie Chart)
+                const pieCtx = document.getElementById('correctVsWrongChart').getContext('2d');
+                const pieData = data.charts.correctVsWrong;
+                if (pieData && pieData.labels.length > 0) {
+                    new Chart(pieCtx, {
+                        type: 'pie',
+                        data: {
+                            labels: pieData.labels,
+                            datasets: [{
+                                data: pieData.datasets[0].data,
+                                backgroundColor: ['#10b981', '#ef4444'],
+                                borderWidth: 0,
+                                hoverOffset: 4
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                    });
+                }
 
             } catch (error) {
                 console.error('Analytics load error:', error);

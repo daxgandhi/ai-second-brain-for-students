@@ -6,6 +6,7 @@ const ExamResult = require('../models/ExamResult');
 // Assuming Flashcard saving isn't fully persistent yet based on flashcards.js route, 
 // we will focus on Notes and Sessions for the structured analytics.
 const { protect } = require('../middleware/auth'); // Authentication middleware
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 // ── GET /api/analytics ────────────────────────────────────────
 // Get structured analytics data for the dashboard (Chart.js ready)
@@ -80,6 +81,39 @@ router.get('/', protect, async (req, res) => {
             avgScore: Math.round(t.avgScore)
         }));
 
+        // 4. Topic Accuracy (For Bar Chart)
+        const topicAccuracyAgg = await ExamResult.aggregate([
+            { $match: { user: userId } },
+            {
+                $group: {
+                    _id: "$topic",
+                    avgScore: { $avg: "$percentage" }
+                }
+            },
+            { $sort: { avgScore: -1 } }
+        ]);
+        const topicLabels = topicAccuracyAgg.map(t => t._id);
+        const topicScores = topicAccuracyAgg.map(t => Math.round(t.avgScore));
+
+        // 5. Correct vs Wrong (For Pie Chart)
+        const correctVsWrongAgg = await ExamResult.aggregate([
+            { $match: { user: userId } },
+            {
+                $group: {
+                    _id: null,
+                    totalCorrect: { $sum: "$score" },
+                    totalQuestions: { $sum: "$totalQuestions" }
+                }
+            }
+        ]);
+        
+        let correctCount = 0;
+        let wrongCount = 0;
+        if (correctVsWrongAgg.length > 0) {
+            correctCount = correctVsWrongAgg[0].totalCorrect;
+            wrongCount = correctVsWrongAgg[0].totalQuestions - correctCount;
+        }
+
         // Structured response payload expected by frontend Chart.js
         res.status(200).json({
             success: true,
@@ -103,6 +137,19 @@ router.get('/', protect, async (req, res) => {
                         datasets: [{
                             data: [pdfNotesCount, textNotesCount]
                         }]
+                    },
+                    topicAccuracy: {
+                        labels: topicLabels,
+                        datasets: [{
+                            label: 'Topic Accuracy (%)',
+                            data: topicScores
+                        }]
+                    },
+                    correctVsWrong: {
+                        labels: ['Correct', 'Wrong'],
+                        datasets: [{
+                            data: [correctCount, wrongCount]
+                        }]
                     }
                 }
             }
@@ -110,6 +157,58 @@ router.get('/', protect, async (req, res) => {
 
     } catch (error) {
         console.error('Fetch analytics error:', error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+});
+
+// ── GET /api/analytics/recommendation ──────────────────────────
+router.get('/recommendation', protect, async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        // Get weak topics
+        const weakTopicsAgg = await ExamResult.aggregate([
+            { $match: { user: userId } },
+            {
+                $group: {
+                    _id: "$topic",
+                    avgScore: { $avg: "$percentage" }
+                }
+            },
+            { $sort: { avgScore: 1 } },
+            { $limit: 3 }
+        ]);
+
+        if (weakTopicsAgg.length === 0) {
+            return res.json({ success: true, recommendation: "You haven't taken any quizzes yet.\n→ Upload notes\n→ Generate MCQs\n→ Start studying!" });
+        }
+
+        const weakTopicNames = weakTopicsAgg.map(t => t._id).join(', ');
+
+        const prompt = `You are an AI Study Recommendation Engine. The user is currently weakest in the following topics: ${weakTopicNames}.
+Please provide a highly personalized, short recommendation (max 4 lines).
+Format it exactly like this example (DO NOT use markdown like **):
+You are weak in Machine Learning
+→ Revise notes
+→ Take 3 quizzes
+→ Practice flashcards
+
+You MUST start with "You are weak in [dominant topic]" and then provide 3 actionable bullet points starting with →. Do not output anything else.`;
+
+        if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'your_gemini_api_key_here') {
+            return res.json({ success: true, recommendation: `You are weak in ${weakTopicsAgg[0]._id}\n→ Revise notes\n→ Take 3 quizzes\n→ Practice flashcards` });
+        }
+
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const result = await model.generateContent(prompt);
+        let recommendation = result.response.text().trim();
+        // remove asterisks if model generates markdown anyway
+        recommendation = recommendation.replace(/\*\*/g, '');
+
+        res.json({ success: true, recommendation });
+    } catch (error) {
+        console.error('Recommendation Engine Error:', error);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 });

@@ -203,6 +203,7 @@
         <a href="upload.html" class="nav-item" data-page="upload"> <span class="nav-icon">📁</span> Upload Notes</a>
         <a href="summary.html" class="nav-item" data-page="summary"> <span class="nav-icon">📋</span> Summary</a>
         <a href="exam.html" class="nav-item" data-page="exam"> <span class="nav-icon">🎯</span> Exam Generator</a>
+        <a href="exam-history.html" class="nav-item" data-page="exam-history"> <span class="nav-icon">📜</span> Exam History</a>
         <a href="flashcards.html" class="nav-item" data-page="flashcards"> <span class="nav-icon">📇</span>
           Flashcards</a>
         <a href="session.html" class="nav-item" data-page="session"> <span class="nav-icon">⏱️</span> Study Timer</a>
@@ -269,6 +270,17 @@
               <button type="submit" id="upload-btn" class="btn btn-primary btn-full">
                 ☁️ Save Note
               </button>
+
+              <!-- Upload Progress Bar -->
+              <div class="upload-progress-wrap" id="upload-progress-wrap">
+                <div class="upload-progress-label">
+                  <span id="upload-progress-text">Uploading...</span>
+                  <span id="upload-progress-pct">0%</span>
+                </div>
+                <div class="upload-progress-bar-bg">
+                  <div class="upload-progress-bar-fill" id="upload-progress-fill"></div>
+                </div>
+              </div>
             </form>
           </div>
 
@@ -358,17 +370,41 @@
 
       setLoading(uploadBtn, true);
 
+      const progressWrap = document.getElementById('upload-progress-wrap');
+      const progressFill = document.getElementById('upload-progress-fill');
+      const progressPct  = document.getElementById('upload-progress-pct');
+      const progressText = document.getElementById('upload-progress-text');
+
+      // Show progress bar only for file uploads
+      if (file) {
+        progressWrap.classList.add('visible');
+        progressFill.style.width = '0%';
+        progressPct.textContent = '0%';
+        progressText.textContent = 'Uploading PDF...';
+      }
+
       try {
         const formData = new FormData();
         formData.append('title', title);
         formData.append('content', content);
         if (file) formData.append('file', file);
 
-        await apiUpload('/notes/upload', formData);
+        if (file) {
+          // Real progress tracking via XHR
+          await apiUploadWithProgress('/notes/upload', formData, (pct) => {
+            progressFill.style.width = pct + '%';
+            progressPct.textContent = pct + '%';
+            if (pct === 100) progressText.textContent = 'Processing...';
+          });
+        } else {
+          await apiUpload('/notes/upload', formData);
+        }
 
         Toast.success('Note saved successfully! ✅');
         form.reset();
         document.getElementById('file-preview').style.display = 'none';
+        progressWrap.classList.remove('visible');
+        progressFill.style.width = '0%';
         loadNotes(); // Refresh list
 
       } catch (err) {
@@ -414,6 +450,7 @@
                 ${isPdf ? (note.fileName || 'PDF') + ' · ' + formatFileSize(note.fileSize || 0) : 'Text note'}
                 · ${formatDate(note.createdAt)}
               </div>
+              ${note.autoSummary ? `<div style="font-size:0.78rem;color:var(--text-muted);margin-top:5px;line-height:1.5;font-style:italic;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${escapeHtml(note.autoSummary)}</div>` : ''}
             </div>
             <div class="note-card-actions">
               ${isPdf && note.fileUrl ? `<a href="http://localhost:5000${note.fileUrl}" target="_blank" class="btn btn-secondary" style="padding:6px 12px;font-size:0.78rem;">👁️</a>` : ''}

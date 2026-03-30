@@ -96,6 +96,7 @@
         <a href="upload.html" class="nav-item" data-page="upload"> <span class="nav-icon">📁</span> Upload Notes</a>
         <a href="summary.html" class="nav-item" data-page="summary"> <span class="nav-icon">📋</span> Summary</a>
         <a href="exam.html" class="nav-item" data-page="exam"> <span class="nav-icon">🎯</span> Exam Generator</a>
+        <a href="exam-history.html" class="nav-item" data-page="exam-history"> <span class="nav-icon">📜</span> Exam History</a>
         <a href="flashcards.html" class="nav-item" data-page="flashcards"> <span class="nav-icon">📇</span>
           Flashcards</a>
         <a href="session.html" class="nav-item" data-page="session"> <span class="nav-icon">⏱️</span> Study Timer</a>
@@ -116,28 +117,53 @@
         <div class="summary-grid">
           <!-- Input -->
           <div class="card">
-            <h3 style="margin-bottom:16px;">Input Text</h3>
+            <h3 style="margin-bottom:16px;">Input Source</h3>
             <div id="message-area"></div>
-            <div class="form-group">
-              <label for="input-text">Paste your notes / text</label>
-              <textarea id="input-text"
-                placeholder="Paste lecture notes, textbook paragraphs, or any study material here..."
-                style="min-height:280px;"></textarea>
+
+            <div class="form-group" style="margin-bottom: 24px;">
+              <label>Source Type</label>
+              <div style="display:flex; gap:12px; background:var(--bg-secondary); padding:6px; border-radius:var(--radius-sm); border:1px solid var(--border);">
+                <label style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:10px; cursor:pointer; background:var(--bg-card); border-radius:6px; border:1px solid var(--accent); color:var(--text-primary); margin:0;" id="label-source-text">
+                  <input type="radio" name="source" value="text" checked style="display:none;" onchange="toggleSource()">
+                  <strong>✍️ Paste Text</strong>
+                </label>
+                <label style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:10px; cursor:pointer; background:transparent; border-radius:6px; border:1px solid transparent; color:var(--text-muted); margin:0;" id="label-source-note">
+                  <input type="radio" name="source" value="note" style="display:none;" onchange="toggleSource()">
+                  <strong>📄 From Note</strong>
+                </label>
+              </div>
             </div>
-            <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;">
-              <span id="word-count" style="font-size:0.8rem;color:var(--text-muted);">0 words</span>
-              <button type="button" id="clear-input-btn" class="btn btn-secondary"
-                style="padding:7px 14px;font-size:0.8rem;margin-left:auto;">Clear</button>
+
+            <div id="container-text">
+              <div class="form-group">
+                <label for="input-text">Paste your notes / text</label>
+                <textarea id="input-text"
+                  placeholder="Paste lecture notes, textbook paragraphs, or any study material here..."
+                  style="min-height:280px;"></textarea>
+              </div>
+              <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;">
+                <span id="word-count" style="font-size:0.8rem;color:var(--text-muted);">0 words</span>
+                <button type="button" id="clear-input-btn" class="btn btn-secondary"
+                  style="padding:7px 14px;font-size:0.8rem;margin-left:auto;">Clear</button>
+              </div>
             </div>
+
+            <div class="form-group" id="container-note" style="display:none; margin-bottom: 24px;">
+              <label for="note-select">Select Uploaded Note *</label>
+              <select id="note-select">
+                <option value="">Loading notes...</option>
+              </select>
+            </div>
+
             <button id="summarize-btn" class="btn btn-primary btn-full">
               ✨ Generate Summary
             </button>
           </div>
 
           <!-- Output -->
-          <div class="card">
+          <div class="card" id="output-card">
             <div class="card-header">
-              <h3>Summary Result</h3>
+              <h3 id="output-title">Summary Result</h3>
               <button id="copy-btn" class="btn btn-secondary copy-btn" style="display:none;">📋 Copy</button>
             </div>
 
@@ -151,6 +177,17 @@
               <span class="stat-pill">📝 Summary: <strong id="stat-summary">0</strong> words</span>
               <span class="stat-pill">🔥 Compressed: <strong id="stat-ratio">0</strong>%</span>
             </div>
+          </div>
+        </div>
+
+        <!-- History Section -->
+        <div id="history-section" style="margin-top: 40px; border-top: 1px solid var(--border); padding-top: 24px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2>🕰️ Your Past Summaries</h2>
+            <button class="btn btn-secondary" onclick="loadHistory()">🔄 Refresh</button>
+          </div>
+          <div id="history-list" style="margin-top: 16px; display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
+            <p style="color:var(--text-muted);">Loading history...</p>
           </div>
         </div>
       </div>
@@ -191,18 +228,76 @@
       msgArea.innerHTML = '';
     }
 
+    // ── Load notes for dropdown ───────────────────────────────
+    async function loadNotes() {
+      try {
+        const res = await apiCall('/notes');
+        const select = document.getElementById('note-select');
+        select.innerHTML = '<option value="">-- Choose a note --</option>';
+        if (res.notes && res.notes.length > 0) {
+          res.notes.forEach(note => {
+            select.innerHTML += `<option value="${note._id}">${escapeHtml(note.title)}</option>`;
+          });
+        } else {
+          select.innerHTML = '<option value="">No notes found. Upload one first!</option>';
+        }
+      } catch (e) {
+        console.error('Failed to load notes', e);
+      }
+    }
+    loadNotes();
+
+    function toggleSource() {
+      const source = document.querySelector('input[name="source"]:checked').value;
+      const labelText = document.getElementById('label-source-text');
+      const labelNote = document.getElementById('label-source-note');
+      
+      if (source === 'text') {
+        document.getElementById('container-text').style.display = 'block';
+        document.getElementById('container-note').style.display = 'none';
+        
+        labelText.style.background = 'var(--bg-card)';
+        labelText.style.borderColor = 'var(--accent)';
+        labelText.style.color = 'var(--text-primary)';
+        
+        labelNote.style.background = 'transparent';
+        labelNote.style.borderColor = 'transparent';
+        labelNote.style.color = 'var(--text-muted)';
+      } else {
+        document.getElementById('container-text').style.display = 'none';
+        document.getElementById('container-note').style.display = 'block';
+        
+        labelNote.style.background = 'var(--bg-card)';
+        labelNote.style.borderColor = 'var(--accent)';
+        labelNote.style.color = 'var(--text-primary)';
+        
+        labelText.style.background = 'transparent';
+        labelText.style.borderColor = 'transparent';
+        labelText.style.color = 'var(--text-muted)';
+      }
+    }
+
     // Generate summary
     summarizeBtn.addEventListener('click', async () => {
+      const source = document.querySelector('input[name="source"]:checked').value;
       const text = inputEl.value.trim();
+      const noteId = document.getElementById('note-select').value;
       msgArea.innerHTML = '';
 
-      if (!text) {
-        msgArea.innerHTML = '<div class="alert alert-error">❌ Please enter some text to summarize</div>';
-        return;
-      }
-      if (text.length < 20) {
-        msgArea.innerHTML = '<div class="alert alert-error">❌ Text is too short. Please enter more content.</div>';
-        return;
+      if (source === 'text') {
+        if (!text) {
+          msgArea.innerHTML = '<div class="alert alert-error">❌ Please enter some text to summarize</div>';
+          return;
+        }
+        if (text.length < 20) {
+          msgArea.innerHTML = '<div class="alert alert-error">❌ Text is too short. Please enter more content.</div>';
+          return;
+        }
+      } else if (source === 'note') {
+        if (!noteId) {
+          msgArea.innerHTML = '<div class="alert alert-error">❌ Please select a note</div>';
+          return;
+        }
       }
 
       setLoading(summarizeBtn, true);
@@ -210,9 +305,13 @@
       resultArea.innerHTML = '<div style="display:flex;align-items:center;gap:10px;color:var(--text-muted);"><span class="spinner" style="border-color:rgba(148,163,184,0.3);border-top-color:var(--accent-bright);width:20px;height:20px;border-width:3px;"></span> Generating summary...</div>';
 
       try {
+        const bodyData = {};
+        if (source === 'text') bodyData.text = text;
+        if (source === 'note') bodyData.noteId = noteId;
+
         const data = await apiCall('/summary', {
           method: 'POST',
-          body: JSON.stringify({ text })
+          body: JSON.stringify(bodyData)
         });
 
         resultArea.className = 'result-box';
@@ -232,6 +331,52 @@
         setLoading(summarizeBtn, false);
       }
     });
+
+    // ── History Logic ───────────────────────────────────────────
+    async function loadHistory() {
+      try {
+        const res = await apiCall('/summary/history');
+        const list = document.getElementById('history-list');
+        list.innerHTML = '';
+        if (res.length === 0) {
+          list.innerHTML = '<p style="color:var(--text-muted);">No past summaries found.</p>';
+          return;
+        }
+        res.forEach(item => {
+           list.innerHTML += `<div class="card" style="cursor:pointer; border: 1px solid var(--border); padding: 16px; border-radius: var(--radius-sm); transition: border-color 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'" onclick="viewHistoryItem('${item._id}')">
+             <div style="display:flex; justify-content:space-between; margin-bottom: 10px;">
+               <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary);"><span style="margin-right:6px;">📋</span> ${escapeHtml(item.sourceTopic)}</div>
+               <div style="font-size: 0.75rem; color: var(--text-muted);">${formatDate(item.createdAt)}</div>
+             </div>
+             <p style="font-size: 0.85rem; color: var(--text-secondary); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${escapeHtml(item.summaryContent)}</p>
+             <div style="margin-top: 12px; font-size: 0.75rem; color: var(--success); font-weight: 600;">🔥 Compressed ${item.compressionRatio}%</div>
+           </div>`;
+        });
+        window._summaryHistory = res; // cache
+      } catch (err) {
+        console.error('Failed to load history', err);
+        document.getElementById('history-list').innerHTML = '<p style="color:var(--danger);">Failed to load history.</p>';
+      }
+    }
+
+    function viewHistoryItem(id) {
+       const item = window._summaryHistory.find(x => x._id === id);
+       if (!item) return;
+       document.getElementById('output-title').innerHTML = `Summary: ${escapeHtml(item.sourceTopic)}`;
+       resultArea.className = 'result-box';
+       resultArea.innerHTML = parseMarkdown(escapeHtml(item.summaryContent));
+       document.getElementById('stat-original').textContent = item.originalWordCount;
+       document.getElementById('stat-summary').textContent = item.summaryWordCount;
+       document.getElementById('stat-ratio').textContent = item.compressionRatio + '%';
+       statsRow.style.display = 'flex';
+       copyBtn.style.display = 'inline-flex';
+       
+       // Scroll to output
+       document.getElementById('output-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Call loadHistory on page load
+    loadHistory();
 
     // Copy summary
     copyBtn.addEventListener('click', () => {

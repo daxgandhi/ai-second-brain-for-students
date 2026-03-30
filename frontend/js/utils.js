@@ -5,6 +5,14 @@
 
 const API_BASE = 'http://localhost:5000/api';
 
+// ── Theme Management ───────────────────────────────────────────
+(function applyThemeEarly() {
+  // Apply theme before any paint to avoid flash
+  if (localStorage.getItem('theme') === 'light') {
+    document.documentElement.classList.add('light-mode');
+  }
+})();
+
 // ── Auth Helpers ──────────────────────────────────────────────
 const Auth = {
   // Save user data after login/register
@@ -63,11 +71,21 @@ async function apiCall(endpoint, options = {}) {
     const data = await res.json();
 
     if (!res.ok) {
+      // Handle Unauthorized/Expired token
+      if (res.status === 401) {
+        console.warn('Unauthorized request, logging out...');
+        const msg = data.message || 'Session expired';
+        Toast.error(msg + '. Redirecting to login...');
+        setTimeout(() => Auth.logout(), 2000);
+      }
       throw new Error(data.message || `Error ${res.status}`);
     }
 
     return data;
   } catch (err) {
+    // If we're already handling 401 redirect, don't show another error
+    if (err.message.includes('Redirecting to login')) throw err;
+
     if (err.name === 'TypeError' && err.message.includes('fetch')) {
       throw new Error('Cannot connect to server. Make sure the backend is running on port 5000.');
     }
@@ -85,12 +103,56 @@ async function apiUpload(endpoint, formData) {
       body: formData
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Upload failed');
+    if (!res.ok) {
+      if (res.status === 401) {
+        Toast.error((data.message || 'Session expired') + '. Redirecting...');
+        setTimeout(() => Auth.logout(), 2000);
+      }
+      throw new Error(data.message || 'Upload failed');
+    }
     return data;
   } catch (err) {
     if (err.name === 'TypeError') throw new Error('Cannot connect to server.');
     throw err;
   }
+}
+
+// ── Upload with real progress (uses XMLHttpRequest) ──────────
+// onProgress(pct, bytesUploaded, totalBytes) called during upload
+function apiUploadWithProgress(endpoint, formData, onProgress) {
+  return new Promise((resolve, reject) => {
+    const token = Auth.getToken();
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${API_BASE}${endpoint}`);
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+
+    xhr.upload.addEventListener('progress', (e) => {
+      if (e.lengthComputable && onProgress) {
+        const pct = Math.round((e.loaded / e.total) * 100);
+        onProgress(pct, e.loaded, e.total);
+      }
+    });
+
+    xhr.addEventListener('load', () => {
+      try {
+        const data = JSON.parse(xhr.responseText);
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(data);
+        } else {
+          if (xhr.status === 401) {
+            Toast.error((data.message || 'Session expired') + '. Redirecting...');
+            setTimeout(() => Auth.logout(), 2000);
+          }
+          reject(new Error(data.message || 'Upload failed'));
+        }
+      } catch (e) {
+        reject(new Error('Server response parse error'));
+      }
+    });
+
+    xhr.addEventListener('error', () => reject(new Error('Cannot connect to server.')));
+    xhr.send(formData);
+  });
 }
 
 // ── Toast Notifications ───────────────────────────────────────
@@ -165,6 +227,26 @@ function initSidebar(activePage) {
     overlay.addEventListener('click', () => {
       sidebar.classList.remove('open');
       overlay.classList.remove('show');
+    });
+  }
+
+  // ── Theme Toggle Button ──────────────────────────────
+  const sidebarFooter = document.querySelector('.sidebar-footer');
+  if (sidebarFooter && !document.getElementById('theme-toggle')) {
+    const isLight = document.documentElement.classList.contains('light-mode');
+    const themeBtn = document.createElement('button');
+    themeBtn.id = 'theme-toggle';
+    themeBtn.innerHTML = `
+      <span id="theme-label">${isLight ? '☀️ Light Mode' : '🌙 Dark Mode'}</span>
+      <div class="toggle-track"><div class="toggle-thumb"></div></div>
+    `;
+    sidebarFooter.insertBefore(themeBtn, sidebarFooter.firstChild);
+
+    themeBtn.addEventListener('click', () => {
+      const html = document.documentElement;
+      const nowLight = html.classList.toggle('light-mode');
+      localStorage.setItem('theme', nowLight ? 'light' : 'dark');
+      document.getElementById('theme-label').textContent = nowLight ? '☀️ Light Mode' : '🌙 Dark Mode';
     });
   }
 }

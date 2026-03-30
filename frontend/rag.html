@@ -327,6 +327,55 @@
       margin-left: auto;
     }
 
+    /* Source citation chips */
+    .source-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .source-chip {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      padding: 6px 10px;
+      background: rgba(59, 130, 246, 0.08);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      color: var(--accent-bright);
+      max-width: 100%;
+      cursor: default;
+    }
+
+    .source-chip .chip-icon {
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .source-chip .chip-body {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .source-chip .chip-title {
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .source-chip .chip-preview {
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     @media (max-width: 768px) {
       .chat-main {
         margin-left: 0;
@@ -379,6 +428,7 @@
         <a href="upload.html" class="nav-item" data-page="upload"> <span class="nav-icon">📁</span> Upload Notes</a>
         <a href="summary.html" class="nav-item" data-page="summary"> <span class="nav-icon">📋</span> Summary</a>
         <a href="exam.html" class="nav-item" data-page="exam"> <span class="nav-icon">🎯</span> Exam Generator</a>
+        <a href="exam-history.html" class="nav-item" data-page="exam-history"> <span class="nav-icon">📜</span> Exam History</a>
         <a href="flashcards.html" class="nav-item" data-page="flashcards"> <span class="nav-icon">📇</span>
           Flashcards</a>
         <a href="session.html" class="nav-item" data-page="session"> <span class="nav-icon">⏱️</span> Study Timer</a>
@@ -618,7 +668,31 @@
         let replyText = data.reply;
         const aiMsgDiv = addMessage(replyText, 'ai');
 
-        if (data.contextUsed) {
+        if (data.contextUsed && data.sources && data.sources.length > 0) {
+          const bubble = aiMsgDiv.querySelector('.msg-bubble');
+          const chipsContainer = document.createElement('div');
+          chipsContainer.className = 'source-chips';
+
+          // Deduplicate sources by title
+          const seen = new Set();
+          data.sources.forEach(src => {
+            if (seen.has(src.title)) return;
+            seen.add(src.title);
+            const chip = document.createElement('div');
+            chip.className = 'source-chip';
+            chip.title = src.preview;
+            chip.innerHTML = `
+              <span class="chip-icon">📄</span>
+              <div class="chip-body">
+                <span class="chip-title">${escapeHtml(src.title)}</span>
+                <span class="chip-preview">${escapeHtml(src.preview)}</span>
+              </div>
+            `;
+            chipsContainer.appendChild(chip);
+          });
+
+          bubble.appendChild(chipsContainer);
+        } else if (data.contextUsed) {
           const successDiv = document.createElement('div');
           successDiv.innerHTML = `<div style="font-size:0.75rem; color:var(--success); margin-top:8px;">✓ Answer formulated using local vector context</div>`;
           aiMsgDiv.querySelector('.msg-bubble').appendChild(successDiv);

@@ -36,6 +36,10 @@ const noteSchema = new mongoose.Schema({
   fileSize: {
     type: Number,   // Size in bytes
     default: 0
+  },
+  autoSummary: {
+    type: String,   // AI-generated 2-sentence summary
+    default: null
   }
 }, {
   timestamps: true
