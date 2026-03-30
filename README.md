@@ -147,6 +147,7 @@ python -m http.server 8080
 | GET    | /api/planner/history  | ✅   | Retrieve past plans       |
 | POST   | /api/flashcards       | ✅   | Generate flashcards       |
 | GET    | /api/flashcards/history| ✅  | Retrieve saved decks      |
+| POST   | /api/flashcards/:deckId/review/:cardId| ✅ | Submit SRS rating |
 
 ---
 
@@ -208,7 +209,7 @@ To run the RAG Features locally (Chat with Notes), ensure you are running an Oll
 | Weak Topic Detection | ✅ Complete | Analyzes past quiz scores |
 | Study Recommendation | ✅ Complete | AI-driven actionable study plans |
 | Summary Generator | ✅ Complete | Summarize from text/notes (History saved) |
-| Flashcards Generator| ✅ Complete | Interactive swipable Deck (History saved) |
+| Flashcards Generator & SRS| ✅ Complete | Interactive swipable Deck + Spaced Repetition (Anki-style) |
 | Exam/Paper Generator| ✅ Complete | Mid/End-Sem, MCQs (Results history saved) |
 | Study Planner | ✅ Complete | Day-by-day AI schedule (History saved) |
 | Responsive UI | ✅ Complete | Mobile sidebar + Dark Theme + CSS variables |

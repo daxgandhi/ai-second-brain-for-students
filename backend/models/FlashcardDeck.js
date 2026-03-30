@@ -12,7 +12,11 @@ const flashcardDeckSchema = new mongoose.Schema({
   },
   cards: [{
     front: { type: String, required: true },
-    back: { type: String, required: true }
+    back: { type: String, required: true },
+    repetition: { type: Number, default: 0 },
+    interval: { type: Number, default: 1 },
+    easiness: { type: Number, default: 2.5 },
+    nextReview: { type: Date, default: Date.now }
   }],
   createdAt: {
     type: Date,

@@ -138,6 +138,29 @@
             text-align: center;
         }
 
+        .srs-btn {
+            padding: 10px 18px;
+            border-radius: var(--radius-sm);
+            border: none;
+            cursor: pointer;
+            font-weight: 700;
+            color: white;
+            transition: transform 0.2s;
+        }
+        .srs-btn:hover { transform: scale(1.05); }
+        .srs-btn:active { transform: scale(0.95); }
+        .srs-hard { background-color: #ef4444; }
+        .srs-good { background-color: #f59e0b; }
+        .srs-easy { background-color: #10b981; }
+
+        .srs-hint {
+            font-size: 0.75rem;
+            opacity: 0.8;
+            display: block;
+            margin-top: 2px;
+            font-weight: 400;
+        }
+
         @media (max-width: 900px) {
             .flashcard-layout {
                 grid-template-columns: 1fr;
@@ -259,10 +282,18 @@
                             <div style="text-align: center; margin-bottom: 24px;">
                                 <h2 id="deck-title" style="color: var(--text-primary); margin-bottom: 8px;">Generated
                                     Deck</h2>
-                                <p style="color: var(--text-muted);">Click the card to reveal the answer.</p>
+                                <p style="color: var(--text-muted);" id="workspace-subtitle">Click the card to reveal the answer.</p>
+                                <button id="start-srs-btn" class="btn btn-primary" style="margin-top: 12px; display: none;">🧠 Start SRS Practice</button>
                             </div>
 
-                            <div class="flashcard-container">
+                            <div id="deck-complete-msg" style="display:none; text-align:center; padding: 40px;">
+                                <div style="font-size:3rem; margin-bottom: 16px;">🎉</div>
+                                <h2>Great Job!</h2>
+                                <p style="color:var(--text-muted);">You've reviewed all cards due for today.</p>
+                                <button class="btn btn-secondary" style="margin-top:20px;" onclick="location.reload()">Back to Decks</button>
+                            </div>
+
+                            <div class="flashcard-container" id="fc-container">
                                 <div class="flashcard" id="active-card">
                                     <div class="flashcard-face flashcard-front">
                                         <span class="flashcard-title">Question</span>
@@ -283,10 +314,25 @@
                                 </div>
                             </div>
 
-                            <div class="flashcard-controls">
+                            <div class="flashcard-controls" id="nav-controls">
                                 <button class="control-btn" id="prev-btn" title="Previous Card">←</button>
                                 <div class="progress-text" id="card-progress">1 / 10</div>
                                 <button class="control-btn" id="next-btn" title="Next Card">→</button>
+                            </div>
+
+                            <div class="flashcard-controls" id="srs-controls" style="display:none; gap:12px;">
+                                <button class="srs-btn srs-hard" onclick="submitSrsReview(2)">
+                                    Hard
+                                    <span class="srs-hint">Review soon</span>
+                                </button>
+                                <button class="srs-btn srs-good" onclick="submitSrsReview(4)">
+                                    Good
+                                    <span class="srs-hint">Standard</span>
+                                </button>
+                                <button class="srs-btn srs-easy" onclick="submitSrsReview(5)">
+                                    Easy
+                                    <span class="srs-hint">Long interval</span>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -312,8 +358,11 @@
         initSidebar('flashcards');
 
         let deck = [];
+        let fullDeck = []; // Stores all cards for preview mode
+        let currentDeckId = null;
         let currentIndex = 0;
         let isFlipped = false;
+        let studyMode = 'preview'; // 'preview' or 'practice'
 
         const generateBtn = document.getElementById('generate-btn');
         const msgArea = document.getElementById('message-area');
@@ -323,12 +372,18 @@
 
         // UI Elements
         const activeCard = document.getElementById('active-card');
+        const fcContainer = document.getElementById('fc-container');
         const cardFrontText = document.getElementById('card-front-text');
         const cardBackText = document.getElementById('card-back-text');
         const cardProgress = document.getElementById('card-progress');
         const prevBtn = document.getElementById('prev-btn');
         const nextBtn = document.getElementById('next-btn');
         const deckTitle = document.getElementById('deck-title');
+        const startSrsBtn = document.getElementById('start-srs-btn');
+        const navControls = document.getElementById('nav-controls');
+        const srsControls = document.getElementById('srs-controls');
+        const deckCompleteMsg = document.getElementById('deck-complete-msg');
+        const workspaceSubtitle = document.getElementById('workspace-subtitle');
 
         // ── Tabs Logic ────────────────────────────────────────────
         const tabBtns = document.querySelectorAll('.tab-btn');
@@ -375,18 +430,44 @@
             isFlipped = !isFlipped;
             if (isFlipped) {
                 activeCard.classList.add('is-flipped');
+                // Show SRS buttons if in practice mode
+                if (studyMode === 'practice') {
+                    srsControls.style.display = 'flex';
+                }
             } else {
                 activeCard.classList.remove('is-flipped');
+                if (studyMode === 'practice') {
+                    srsControls.style.display = 'none';
+                }
             }
         });
 
         // ── Navigation Logic ──────────────────────────────────────
         function updateCardView() {
-            if (deck.length === 0) return;
+            if (deck.length === 0) {
+                fcContainer.style.display = 'none';
+                navControls.style.display = 'none';
+                srsControls.style.display = 'none';
+                deckCompleteMsg.style.display = 'block';
+                return;
+            }
+
+            fcContainer.style.display = 'block';
+            deckCompleteMsg.style.display = 'none';
 
             // Always show front when changing cards
             isFlipped = false;
             activeCard.classList.remove('is-flipped');
+            srsControls.style.display = 'none';
+
+            // Configure controls visiblity
+            if (studyMode === 'practice') {
+                navControls.style.display = 'none';
+                workspaceSubtitle.textContent = 'Practice Mode: Click chart to flip, then rate how well you knew it.';
+            } else {
+                navControls.style.display = 'flex';
+                workspaceSubtitle.textContent = 'Preview Mode: Click the card to reveal the answer.';
+            }
 
             // Wait for flip animation to finish before changing text (optional: setTimeout)
             cardFrontText.textContent = deck[currentIndex].front;
@@ -461,6 +542,11 @@
                 });
 
                 deck = data.flashcards;
+                fullDeck = [...deck];
+                currentDeckId = data.id;
+                studyMode = 'preview';
+                startSrsBtn.style.display = 'none'; // Fresh generated decks don't go to SRS until saved
+
                 if (deck.length === 0) {
                     throw new Error("No flashcards were generated.");
                 }
@@ -500,12 +586,23 @@
                     return;
                 }
                 res.forEach(item => {
+                    const today = new Date();
+                    let dueCount = 0;
+                    if (item.cards) {
+                        dueCount = item.cards.filter(c => new Date(c.nextReview || 0) <= today).length;
+                    }
+
+                    const dueBadge = dueCount > 0 
+                        ? `<span style="background:var(--danger);color:white;padding:2px 8px;border-radius:12px;font-size:0.75rem;font-weight:bold;">${dueCount} Due</span>`
+                        : `<span style="background:var(--success);color:black;padding:2px 8px;border-radius:12px;font-size:0.75rem;font-weight:bold;">Done</span>`;
+
                     list.innerHTML += `<div class="card" style="cursor:pointer; border: 1px solid var(--border); padding: 16px; border-radius: var(--radius-sm); transition: border-color 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'" onclick="viewHistoryItem('${item._id}')">
                         <div style="display:flex; justify-content:space-between; margin-bottom: 6px;">
                             <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary);"><span style="margin-right:6px;">📇</span> ${escapeHtml(item.topic)}</div>
+                            ${dueBadge}
                         </div>
                         <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">${formatDate(item.createdAt)}</div>
-                        <div style="font-size: 0.85rem; color: var(--accent-bright); font-weight: 600;">${item.cards.length} Cards</div>
+                        <div style="font-size: 0.85rem; color: var(--accent-bright); font-weight: 600;">${item.cards ? item.cards.length : 0} Cards total</div>
                     </div>`;
                 });
                 window._flashcardHistory = res;
@@ -519,7 +616,22 @@
             const item = window._flashcardHistory.find(x => x._id === id);
             if (!item || !item.cards || item.cards.length === 0) return;
 
-            deck = item.cards;
+            fullDeck = item.cards;
+            deck = [...fullDeck]; // Default to Preview mode, showing all cards
+            currentDeckId = item._id;
+            studyMode = 'preview';
+            
+            // Check if there are cards due
+            const today = new Date();
+            const dueCount = fullDeck.filter(c => new Date(c.nextReview || 0) <= today).length;
+            
+            if (dueCount > 0) {
+                startSrsBtn.style.display = 'inline-block';
+                startSrsBtn.innerHTML = `🧠 Start SRS Practice (${dueCount} Due)`;
+            } else {
+                startSrsBtn.style.display = 'none';
+            }
+
             deckTitle.textContent = `Deck: ${item.topic}`;
             currentIndex = 0;
             isFlipped = false;
@@ -531,6 +643,51 @@
             
             // Scroll up to workspace
             document.querySelector('.flashcard-layout').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // ── SRS Mode Triggers ──────────────────────────────────────
+        startSrsBtn.addEventListener('click', () => {
+             const today = new Date();
+             deck = fullDeck.filter(c => new Date(c.nextReview || 0) <= today);
+             studyMode = 'practice';
+             currentIndex = 0;
+             startSrsBtn.style.display = 'none';
+             deckTitle.textContent = `${deckTitle.textContent} (SRS Practice)`;
+             updateCardView();
+        });
+
+        async function submitSrsReview(quality) {
+             const currentCard = deck[currentIndex];
+             if (!currentDeckId || !currentCard._id) return;
+             
+             // Hide buttons so they don't double click
+             srsControls.style.display = 'none';
+             
+             try {
+                 await apiCall('/flashcards/' + currentDeckId + '/review/' + currentCard._id, {
+                     method: 'POST',
+                     body: JSON.stringify({ quality })
+                 });
+                 
+                 // Remove card from active due queue
+                 deck.splice(currentIndex, 1);
+                 
+                 // Since we spliced, the next card falls into the current index!
+                 // If index is out of bounds, push it back
+                 if (currentIndex >= deck.length) {
+                     currentIndex = Math.max(0, deck.length - 1);
+                 }
+                 
+                 // Re-render
+                 updateCardView();
+                 
+                 // Refresh History in background so the badges update
+                 loadHistory();
+             } catch(err) {
+                 console.error('Failed to submit review:', err);
+                 alert('Error saving review score');
+                 srsControls.style.display = 'flex';
+             }
         }
 
         // Call loadHistory on page load
