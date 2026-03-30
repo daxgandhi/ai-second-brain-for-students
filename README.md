@@ -52,20 +52,23 @@ ai-second-brain/
     ├── models/
     │   ├── ChatMessage.js     ← Chat history schema
     │   ├── ExamResult.js      ← Exam results schema
+    │   ├── FlashcardDeck.js   ← Saved flashcard decks schema
     │   ├── Note.js            ← Notes/files schema
+    │   ├── StudyPlan.js       ← Saved study plans schema
     │   ├── StudySession.js    ← Study session schema
+    │   ├── SummaryHistory.js  ← Saved summary generations schema
     │   └── User.js            ← User schema
     ├── routes/
     │   ├── analytics.js       ← GET /analytics routes
     │   ├── auth.js            ← POST /register, POST /login, GET /me
     │   ├── chat.js            ← POST /chat routes
     │   ├── exam.js            ← POST /exam routes
-    │   ├── flashcards.js      ← POST /flashcards routes
+    │   ├── flashcards.js      ← POST /flashcards, GET /history
     │   ├── notes.js           ← POST /upload, GET /, DELETE /:id
-    │   ├── planner.js         ← POST /planner routes
-    │   ├── rag.js             ← RAG chat routes
+    │   ├── planner.js         ← POST /planner, GET /history
+    │   ├── rag.js             ← POST /rag, GET /rag/history
     │   ├── sessions.js        ← Session tracking routes
-    │   └── summary.js         ← POST /summary routes
+    │   └── summary.js         ← POST /summary, GET /history
     ├── utils/
     │   └── ragUtils.js        ← RAG utility functions (ChromaDB/Embeddings)
     └── uploads/               ← Created automatically for PDF storage
@@ -124,7 +127,7 @@ python -m http.server 8080
 
 ---
 
-## 🔌 API Endpoints
+## 🔌 API Endpoints (Highlights)
 
 | Method | Endpoint              | Auth | Description               |
 |--------|-----------------------|------|---------------------------|
@@ -133,17 +136,23 @@ python -m http.server 8080
 | GET    | /api/auth/me          | ✅   | Get current user info     |
 | POST   | /api/notes/upload     | ✅   | Upload PDF or text note   |
 | GET    | /api/notes            | ✅   | Get all user notes        |
-| DELETE | /api/notes/:id        | ✅   | Delete a note             |
-| POST   | /api/chat             | ✅   | Send chat message         |
+| POST   | /api/chat             | ✅   | Send Standard chat message|
+| POST   | /api/rag              | ✅   | Chat with Uploaded Notes  |
+| GET    | /api/rag/history      | ✅   | Retrieve RAG chat history |
 | POST   | /api/summary          | ✅   | Generate text summary     |
-| POST   | /api/exam             | ✅   | Generate MCQ questions    |
+| GET    | /api/summary/history  | ✅   | Retrieve past summaries   |
+| POST   | /api/exam             | ✅   | Generate MCQ/Papers       |
+| GET    | /api/exam/history     | ✅   | Retrieve exam results     |
 | POST   | /api/planner          | ✅   | Generate study plan       |
+| GET    | /api/planner/history  | ✅   | Retrieve past plans       |
+| POST   | /api/flashcards       | ✅   | Generate flashcards       |
+| GET    | /api/flashcards/history| ✅  | Retrieve saved decks      |
 
 ---
 
-## 🤖 Connecting a Real AI (Next Steps)
+## 🤖 AI Integration (Gemini-2.5-Flash)
 
-The backend currently uses smart dummy responses. To connect a real AI:
+This project has been fully upgraded to use the **Google Gemini-2.5-Flash** AI model for all generation tools. Features like Summaries, Exams, Flashcards, Planners, and RAG (Chat with Notes) rely on real AI generation rather than dummy responses!
 
 ### Option A: OpenAI
 
@@ -177,12 +186,12 @@ const result = await model.generateContent(message);
 return result.response.text();
 ```
 
-Add your API key to `.env`:
+Add your API key to `.env` for the tools to work:
 ```
-OPENAI_API_KEY=sk-...
-# or
 GEMINI_API_KEY=AIza...
 ```
+
+To run the RAG Features locally (Chat with Notes), ensure you are running an Ollama instance with `llama3` for embedded chunks generation, and a local ChromaDB instance on port 8000 handling vector storage.
 
 ---
 
@@ -190,17 +199,16 @@ GEMINI_API_KEY=AIza...
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| User Registration | ✅ Complete | JWT auth, bcrypt hashing |
-| User Login | ✅ Complete | Token expires in 7 days |
-| Dashboard | ✅ Complete | Stats + recent notes |
-| AI Chat | ✅ Complete | Dummy responses (swap with AI API) |
-| PDF Upload | ✅ Complete | Multer, 10MB limit |
-| Text Notes | ✅ Complete | Full CRUD |
-| Summary Generator | ✅ Complete | Dummy (ready for AI API) |
-| MCQ Exam Generator | ✅ Complete | Interactive quiz with scoring |
-| Study Planner | ✅ Complete | Day-by-day timeline |
-| Responsive UI | ✅ Complete | Mobile sidebar + responsive grid |
-| Dark Theme | ✅ Complete | CSS variables-based |
+| User Auth | ✅ Complete | JWT auth, bcrypt hashing |
+| Dashboard & Analytics | ✅ Complete | Dynamic stats + study hours tracking |
+| Note Uploads | ✅ Complete | Parse and chunk PDF/Text (Store in MongoDB) |
+| Standard Chat | ✅ Complete | Conversational Gemini AI (History saved) |
+| Chat with Notes (RAG) | ✅ Complete | Vector search via ChromaDB + Ollama + Gemini |
+| Summary Generator | ✅ Complete | Summarize from text/notes (History saved) |
+| Flashcards Generator| ✅ Complete | Interactive swipable Deck (History saved) |
+| Exam/Paper Generator| ✅ Complete | Mid/End-Sem, MCQs (Results history saved) |
+| Study Planner | ✅ Complete | Day-by-day AI schedule (History saved) |
+| Responsive UI | ✅ Complete | Mobile sidebar + Dark Theme + CSS variables |
 
 ---
 
