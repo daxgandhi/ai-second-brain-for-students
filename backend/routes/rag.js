@@ -108,7 +108,8 @@ Answer (be brief and extractive):`;
             // Build sources list for frontend display
             const sources = relevantChunks.map(chunk => ({
                 title: chunk.metadata?.title || 'Unknown Note',
-                preview: chunk.text.substring(0, 120).trim() + (chunk.text.length > 120 ? '...' : '')
+                preview: chunk.text.substring(0, 120).trim() + (chunk.text.length > 120 ? '...' : ''),
+                score: chunk.score
             }));
 
             res.json({

@@ -174,15 +174,25 @@ async function queryRelevantChunks(question, limit = 4, filterNoteId = null) {
         });
 
         // Results come in arrays of arrays [ [chunk1, chunk2...] ]
-        if (results && results.documents && results.documents.length > 0) {
+        if (results && results.documents && results.documents.length > 0 && results.documents[0].length > 0) {
             // Map the matched chunks alongside their metadata score
             const matchedChunks = results.documents[0];
             const matchedMeta = results.metadatas[0];
+            const matchedDistances = results.distances ? results.distances[0] : [];
 
-            return matchedChunks.map((text, i) => ({
-                text: text,
-                metadata: matchedMeta[i]
-            }));
+            return matchedChunks.map((text, i) => {
+                // Chroma cosine distance: smaller is better (0 = identical)
+                // Cosine similarity = 1 - distance
+                const distance = matchedDistances[i] !== undefined ? matchedDistances[i] : 0;
+                const similarityScore = Math.max(0, 1 - distance);
+
+                return {
+                    text: text,
+                    metadata: matchedMeta[i],
+                    distance: distance,
+                    score: similarityScore
+                };
+            });
         }
 
         return [];

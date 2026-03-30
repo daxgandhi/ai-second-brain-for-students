@@ -681,10 +681,11 @@
             const chip = document.createElement('div');
             chip.className = 'source-chip';
             chip.title = src.preview;
+            const scoreDisplay = src.score !== undefined ? ` <span style="font-weight: normal; color: var(--text-muted);">(Score: ${src.score.toFixed(2)})</span>` : '';
             chip.innerHTML = `
               <span class="chip-icon">📄</span>
               <div class="chip-body">
-                <span class="chip-title">${escapeHtml(src.title)}</span>
+                <span class="chip-title">${escapeHtml(src.title)}${scoreDisplay}</span>
                 <span class="chip-preview">${escapeHtml(src.preview)}</span>
               </div>
             `;
