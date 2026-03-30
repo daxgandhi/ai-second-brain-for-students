@@ -315,8 +315,9 @@ select option { background: var(--bg-secondary); }
   top: 0; left: 0;
   height: 100vh;
   z-index: 100;
-  transition: transform 0.3s ease;
+  transition: width 0.3s ease, transform 0.3s ease;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 .sidebar-logo {
   padding: 24px 20px 20px;
@@ -434,6 +435,7 @@ select option { background: var(--bg-secondary); }
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  transition: margin-left 0.3s ease;
 }
 .page-header {
   padding: 32px 40px 0;
@@ -597,9 +599,92 @@ select option { background: var(--bg-secondary); }
   .grid-4 { grid-template-columns: repeat(2, 1fr); }
   .grid-3 { grid-template-columns: repeat(2, 1fr); }
 }
+/* ── Desktop Sidebar Collapse ────────────────────────────────── */
+body.sidebar-collapsed .sidebar { width: 80px; }
+body.sidebar-collapsed .main-content,
+body.sidebar-collapsed .chat-main { 
+  margin-left: 80px; 
+}
+
+/* Hide Text Elements */
+body.sidebar-collapsed .logo-wrapper,
+body.sidebar-collapsed .user-info,
+body.sidebar-collapsed .nav-label,
+body.sidebar-collapsed .nav-item-text,
+body.sidebar-collapsed .toggle-track {
+  display: none !important;
+}
+
+/* Re-center Layouts */
+body.sidebar-collapsed .sidebar-logo {
+  flex-direction: column;
+  justify-content: center !important;
+  align-items: center;
+  padding: 24px 0 20px;
+}
+body.sidebar-collapsed #desktop-sidebar-toggle {
+  margin: 0 auto;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+}
+body.sidebar-collapsed #desktop-sidebar-toggle:hover {
+  background: var(--bg-hover) !important;
+  color: var(--text-primary) !important;
+}
+
+body.sidebar-collapsed .sidebar-user {
+  padding: 16px 0;
+  justify-content: center;
+}
+
+body.sidebar-collapsed .sidebar-nav {
+  padding: 16px 12px;
+}
+
+body.sidebar-collapsed .nav-item {
+  justify-content: center;
+  padding: 12px 0;
+  margin-bottom: 8px;
+  width: 100%;
+}
+body.sidebar-collapsed .nav-item .nav-icon {
+  margin: 0;
+  font-size: 1.45rem;
+  width: auto;
+}
+
+body.sidebar-collapsed .sidebar-footer {
+  padding: 16px 12px;
+}
+
+body.sidebar-collapsed #logout-btn {
+  justify-content: center;
+  padding: 12px 0;
+  width: 100%;
+}
+body.sidebar-collapsed #logout-btn .nav-icon {
+  margin: 0 !important;
+  font-size: 1.45rem;
+}
+
+body.sidebar-collapsed #theme-toggle {
+  justify-content: center;
+  padding: 12px 0;
+  width: 100%;
+}
+body.sidebar-collapsed #theme-toggle .hidden-when-open {
+  display: inline-block !important;
+  font-size: 1.45rem;
+}
+
 @media (max-width: 768px) {
   .sidebar {
     transform: translateX(-100%);
+    width: var(--sidebar-width) !important;
   }
   .sidebar.open {
     transform: translateX(0);

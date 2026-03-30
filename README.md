@@ -1,4 +1,4 @@
-# 🧠 AI Second Brain for Students
+# 🧠 Cortex AI for Students
 
 A full-stack AI-powered study assistant that helps students **store, understand, revise, and retain knowledge efficiently** using modern AI techniques like **RAG (Retrieval-Augmented Generation)** and **Spaced Repetition (SRS)**.
 
@@ -210,5 +210,5 @@ it is a **complete AI-powered learning system** that helps students:
 
 ---
 
-*Built with focus on real-world learning problems 🚀*
+*Built as a Final Year Project — Cortex AI for Students 🚀*
 

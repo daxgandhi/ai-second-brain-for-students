@@ -198,17 +198,36 @@ function initSidebar(activePage) {
   if (emailEl) emailEl.textContent = user.email;
   if (avatarEl) avatarEl.textContent = user.name.charAt(0).toUpperCase();
 
-  // Set active nav item
+  // Set active nav item and wrap text nodes for collapse styling
   const navItems = document.querySelectorAll('.nav-item');
   navItems.forEach(item => {
+    let textStr = '';
+    Array.from(item.childNodes).forEach(node => {
+        if (node.nodeType === Node.TEXT_NODE && node.textContent.trim().length > 0) {
+            textStr = node.textContent.trim();
+            const span = document.createElement('span');
+            span.className = 'nav-item-text';
+            span.textContent = node.textContent;
+            item.replaceChild(span, node);
+        }
+    });
+
+    if (textStr) {
+        item.title = textStr; // Native tooltip hover is helpful when collapsed
+    }
+
     if (item.dataset.page === activePage) {
       item.classList.add('active');
     }
   });
 
-  // Logout button
+  // Logout button wrapping for collapse
   const logoutBtn = document.getElementById('logout-btn');
   if (logoutBtn) {
+    if (!logoutBtn.querySelector('.nav-item-text')) {
+       logoutBtn.innerHTML = `<span class="nav-icon" style="margin-right:8px;">🚪</span><span class="nav-item-text">Logout</span>`;
+       logoutBtn.title = "Logout";
+    }
     logoutBtn.addEventListener('click', () => {
       Auth.logout();
     });
@@ -230,14 +249,54 @@ function initSidebar(activePage) {
     });
   }
 
+  // Desktop sidebar toggle
+  const logoDiv = document.querySelector('.sidebar-logo');
+  if (logoDiv && !document.getElementById('desktop-sidebar-toggle')) {
+    logoDiv.style.display = 'flex';
+    logoDiv.style.justifyContent = 'space-between';
+    logoDiv.style.alignItems = 'center';
+    
+    // Wrap logo text so they hide as one block
+    const wrapper = document.createElement('div');
+    wrapper.className = 'logo-wrapper';
+    wrapper.style.display = 'flex';
+    wrapper.style.flexDirection = 'column';
+    
+    Array.from(logoDiv.childNodes).forEach(child => {
+       if (child.nodeType === Node.ELEMENT_NODE && child.id !== 'desktop-sidebar-toggle') {
+           wrapper.appendChild(child);
+       }
+    });
+    logoDiv.appendChild(wrapper);
+
+    const desktopToggleBtn = document.createElement('button');
+    desktopToggleBtn.id = 'desktop-sidebar-toggle';
+    desktopToggleBtn.innerHTML = '☰';
+    desktopToggleBtn.style.cssText = 'background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:1.6rem; transition:var(--transition); outline:none; display:flex; align-items:center; justify-content:center;';
+    desktopToggleBtn.title = "Toggle Sidebar";
+    logoDiv.appendChild(desktopToggleBtn);
+
+    desktopToggleBtn.addEventListener('click', () => {
+       document.body.classList.toggle('sidebar-collapsed');
+       localStorage.setItem('sidebarCollapsed', document.body.classList.contains('sidebar-collapsed'));
+    });
+  }
+
+  // Restore collapsed state if set
+  if (localStorage.getItem('sidebarCollapsed') === 'true' && window.innerWidth > 768) {
+      document.body.classList.add('sidebar-collapsed');
+  }
+
   // ── Theme Toggle Button ──────────────────────────────
   const sidebarFooter = document.querySelector('.sidebar-footer');
   if (sidebarFooter && !document.getElementById('theme-toggle')) {
     const isLight = document.documentElement.classList.contains('light-mode');
     const themeBtn = document.createElement('button');
     themeBtn.id = 'theme-toggle';
+    themeBtn.title = 'Toggle Theme';
     themeBtn.innerHTML = `
-      <span id="theme-label">${isLight ? '☀️ Light Mode' : '🌙 Dark Mode'}</span>
+      <span class="nav-icon hidden-when-open" style="display:none;">🎨</span>
+      <span id="theme-label" class="nav-item-text">${isLight ? '☀️ Light Mode' : '🌙 Dark Mode'}</span>
       <div class="toggle-track"><div class="toggle-thumb"></div></div>
     `;
     sidebarFooter.insertBefore(themeBtn, sidebarFooter.firstChild);
