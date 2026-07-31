@@ -44,6 +44,7 @@ const upload = multer({
 // POST /api/notes/upload  (Protected)
 const pdfParse = require('pdf-parse');
 const { ingestDocumentToChroma, deleteNoteFromChroma } = require('../utils/ragUtils');
+const { processDocumentWithPython, deleteNoteFromPythonChroma } = require('../utils/pythonAiClient');
 
 router.post('/upload', protect, upload.single('file'), async (req, res) => {
   try {
@@ -60,26 +61,28 @@ router.post('/upload', protect, upload.single('file'), async (req, res) => {
       fileType: 'text'
     };
 
+    let filePathOnDisk = null;
+
     // If a PDF file was uploaded
     if (req.file) {
       noteData.fileUrl = `/uploads/${req.file.filename}`;
       noteData.fileName = req.file.originalname;
       noteData.fileSize = req.file.size;
       noteData.fileType = 'pdf';
+      filePathOnDisk = req.file.path;
 
-      // Background extract PDF text for Chat context
+      // Extract PDF text
       try {
         const dataBuffer = fs.readFileSync(req.file.path);
         const pdfData = await pdfParse(dataBuffer);
         
-        // Basic cleaning to fix missing spaces sometimes caused by pdf-parse
         let cleanedText = pdfData.text
-          .replace(/([a-z])([A-Z])/g, '$1 $2') // Add space between camelCase if it shouldn't be
-          .replace(/(\w)([\.\!\?])/g, '$1$2 ') // Ensure space after punctuation
-          .replace(/\s+/g, ' ')               // Collapse multiple spaces
+          .replace(/([a-z])([A-Z])/g, '$1 $2')
+          .replace(/(\w)([\.\!\?])/g, '$1$2 ')
+          .replace(/\s+/g, ' ')
           .trim();
           
-        noteData.content = cleanedText; // Store cleaned text for AI Chat
+        noteData.content = cleanedText;
       } catch (err) {
         console.error('Error parsing PDF content:', err);
       }
@@ -87,11 +90,21 @@ router.post('/upload', protect, upload.single('file'), async (req, res) => {
 
     const note = await Note.create(noteData);
 
-    // ── Local RAG: Chunk and store the text in ChromaDB (Async) ──
-    if (noteData.content) {
-      // We don't await this to avoid blocking the HTTP response
-      ingestDocumentToChroma(note._id, note.title, noteData.content)
-        .catch(err => console.error(`Failed to ingest note ${note._id} into ChromaDB:`, err));
+    // ── Local RAG: Chunk and store text in ChromaDB via Python Service ──
+    if (noteData.content || filePathOnDisk) {
+      (async () => {
+        try {
+          console.log(`Delegating document ingestion for note ${note._id} to Python AI service...`);
+          await processDocumentWithPython(note._id, note.title, noteData.content, filePathOnDisk);
+          console.log(`✅ Document ingestion queued in Python AI service for note ${note._id}`);
+        } catch (pyErr) {
+          console.warn('Python AI service document ingestion failed, falling back to local JS ingestion:', pyErr.message);
+          if (noteData.content) {
+            ingestDocumentToChroma(note._id, note.title, noteData.content)
+              .catch(err => console.error(`Failed to ingest note ${note._id} into local ChromaDB:`, err));
+          }
+        }
+      })();
     }
 
     // ── Auto-Summary: Generate 2-sentence AI summary (Async) ──────
@@ -102,7 +115,7 @@ router.post('/upload', protect, upload.single('file'), async (req, res) => {
           const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
           const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-          const snippet = noteData.content.slice(0, 3000); // first 3k chars
+          const snippet = noteData.content.slice(0, 3000);
           const result = await model.generateContent(
             `Summarize the following study notes in exactly 2 concise sentences. Focus on the most important concept.\n\nNotes:\n${snippet}`
           );
@@ -127,7 +140,6 @@ router.post('/upload', protect, upload.single('file'), async (req, res) => {
 // GET /api/notes  (Protected)
 router.get('/', protect, async (req, res) => {
   try {
-    // Find all notes belonging to this user, newest first
     const notes = await Note.find({ user: req.user._id }).sort({ createdAt: -1 });
     res.json({ notes });
   } catch (error) {
@@ -142,7 +154,6 @@ router.delete('/:id', protect, async (req, res) => {
     const note = await Note.findOne({ _id: req.params.id, user: req.user._id });
     if (!note) return res.status(404).json({ message: 'Note not found' });
 
-    // Delete the physical file if it exists
     if (note.fileUrl) {
       const filePath = path.join(__dirname, '..', note.fileUrl);
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
@@ -150,9 +161,12 @@ router.delete('/:id', protect, async (req, res) => {
 
     await note.deleteOne();
 
-    // ── Sync: Remove all vectors from ChromaDB for this note ──
-    deleteNoteFromChroma(note._id)
-      .catch(err => console.error(`Failed to delete ChromaDB chunks for note ${note._id}:`, err));
+    // ── Sync: Delete vectors from ChromaDB via Python Service ──
+    deleteNoteFromPythonChroma(note._id)
+      .catch(err => {
+        console.warn('Python ChromaDB deletion warning, trying local fallback:', err.message);
+        deleteNoteFromChroma(note._id).catch(() => {});
+      });
 
     res.json({ message: 'Note deleted successfully' });
 

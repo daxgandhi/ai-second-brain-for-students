@@ -1,0 +1,11 @@
+Generate {count} interactive study flashcards based on the following topic or study notes.
+Return ONLY valid JSON matching this exact format:
+[
+  {
+    "front": "Question or Key Concept?",
+    "back": "Clear and concise explanation or answer."
+  }
+]
+
+Topic / Notes:
+{content}

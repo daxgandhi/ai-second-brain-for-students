@@ -1,0 +1,15 @@
+Generate a {question_count}-question multiple-choice exam on the topic: "{topic}".
+Difficulty level: {difficulty}
+
+Return ONLY valid JSON matching this exact format:
+[
+  {
+    "question": "Question text here?",
+    "options": ["Option A", "Option B", "Option C", "Option D"],
+    "correctAnswer": 0,
+    "explanation": "Brief explanation of why Option A is correct."
+  }
+]
+
+Additional context or notes:
+{content}

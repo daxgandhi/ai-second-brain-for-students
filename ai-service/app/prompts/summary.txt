@@ -1,0 +1,5 @@
+Please provide a structured summary of the following text.
+Include Key Points, Key Concepts, and a brief Overview. Limit to concise bullet points and paragraphs.
+
+Text:
+{text}

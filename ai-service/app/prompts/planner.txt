@@ -1,0 +1,18 @@
+Create a realistic, day-by-day study schedule for a student studying "{subject}".
+Target exam date / timeframe: {timeframe}
+Daily study availability: {hours_per_day} hours/day.
+
+Return ONLY valid JSON matching this exact format:
+{
+  "planTitle": "Study Plan for {subject}",
+  "totalDays": 7,
+  "dailySchedule": [
+    {
+      "day": 1,
+      "focus": "Topic or Chapter Name",
+      "tasks": ["Task 1", "Task 2"],
+      "estimatedHours": {hours_per_day}
+    }
+  ],
+  "tips": ["Study tip 1", "Study tip 2"]
+}
