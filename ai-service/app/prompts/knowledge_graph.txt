@@ -1,0 +1,26 @@
+Analyze the following study notes and extract a knowledge graph.
+
+Identify the most important concepts (nodes) and the relationships between them (edges).
+
+Return ONLY valid JSON in this exact format:
+{
+  "title": "Knowledge Graph Title",
+  "nodes": [
+    { "id": "1", "label": "Concept Name", "group": "main", "description": "Brief 1-sentence description of this concept." },
+    { "id": "2", "label": "Sub Concept", "group": "sub", "description": "Brief description." }
+  ],
+  "edges": [
+    { "from": "1", "to": "2", "label": "relationship type" }
+  ]
+}
+
+Rules:
+- Extract 8 to 15 nodes maximum. Do not extract more than 15.
+- Node groups must be one of: "main" (core concept), "sub" (sub-concept), "example" (real-world example), "algorithm" (algorithm or technique)
+- Edge labels should be short relationship verbs: "includes", "uses", "leads to", "is a type of", "enables", "requires", "part of"
+- descriptions must be one concise sentence (max 15 words)
+- The "id" field must be a unique string number starting from "1"
+- Do not include any markdown, code fences, or text outside the JSON
+
+Study Notes:
+{text}

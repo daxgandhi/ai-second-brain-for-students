@@ -87,12 +87,108 @@ async function deleteNoteFromPythonChroma(noteId) {
 }
 
 /**
+ * Helper: Standard conversational chat via Python AI Microservice
+ */
+async function chatWithPython(message) {
+  return await callPythonAiService('/api/ai/chat', { message });
+}
+
+/**
+ * Helper: Generate flashcards deck via Python AI Microservice
+ */
+async function generateFlashcardsWithPython(topic, count = 5) {
+  return await callPythonAiService('/api/ai/flashcards/generate', { topic, count });
+}
+
+/**
+ * Helper: Calculate SRS rating via Python AI Microservice
+ */
+async function calculateSrsWithPython(rating, interval, repetition, easeFactor) {
+  return await callPythonAiService('/api/ai/flashcards/srs-rate', {
+    rating,
+    interval,
+    repetition,
+    ease_factor: easeFactor
+  });
+}
+
+/**
+ * Helper: Generate MCQ exam questions via Python AI Microservice
+ */
+async function generateExamWithPython(topic, questionCount = 5, difficulty = 'medium', content = null) {
+  return await callPythonAiService('/api/ai/exam/generate', {
+    topic,
+    question_count: questionCount,
+    difficulty,
+    content
+  });
+}
+
+/**
+ * Helper: Generate day-by-day study schedule via Python AI Microservice
+ */
+async function generatePlannerWithPython(subject, timeframe = '7 days', hoursPerDay = 2.0) {
+  return await callPythonAiService('/api/ai/planner/generate', {
+    subject,
+    timeframe,
+    hours_per_day: hoursPerDay
+  });
+}
+
+/**
+ * Helper: Generate weak topic & study recommendations via Python AI Microservice
+ */
+async function generateRecommendationsWithPython(examResults = [], studyTopics = []) {
+  return await callPythonAiService('/api/ai/recommendation/generate', {
+    exam_results: examResults,
+    study_topics: studyTopics
+  });
+}
+
+/**
  * Helper: Poll background task status from Python AI Microservice
  */
 async function getPythonTaskStatus(taskId) {
   const url = `${PYTHON_AI_URL}/api/ai/tasks/${taskId}`;
   const res = await fetch(url);
   return await res.json();
+}
+
+/**
+ * Helper: Generate knowledge graph from note text via Python AI Microservice
+ */
+async function generateKnowledgeGraphWithPython(text, title = 'Knowledge Graph') {
+  return await callPythonAiService('/api/ai/knowledge-graph/generate', { text, title });
+}
+
+/**
+ * Helper: Ask a question about the knowledge graph via Python AI Microservice
+ */
+async function askKnowledgeGraphWithPython(question, graphContext) {
+  return await callPythonAiService('/api/ai/knowledge-graph/ask', { 
+    question, 
+    graph_context: graphContext 
+  });
+}
+
+/**
+ * Helper: Generate insights for a knowledge graph via Python AI Microservice
+ */
+async function generateGraphInsightsWithPython(graphContext) {
+  return await callPythonAiService('/api/ai/knowledge-graph/insights', { 
+    graph_context: graphContext 
+  });
+}
+
+/**
+ * Helper: Explain a concept based on note context via Python AI Microservice
+ */
+async function explainConceptWithPython(conceptName, graphContext, noteContent) {
+  return await callPythonAiService('/api/ai/knowledge-graph/concept/explain', {
+    concept: conceptName,
+    graph_context: graphContext,
+    note_content: noteContent
+  });
 }
 
 module.exports = {
@@ -103,5 +199,15 @@ module.exports = {
   processDocumentWithPython,
   queryRagWithPython,
   deleteNoteFromPythonChroma,
-  getPythonTaskStatus
+  chatWithPython,
+  generateFlashcardsWithPython,
+  calculateSrsWithPython,
+  generateExamWithPython,
+  generatePlannerWithPython,
+  generateRecommendationsWithPython,
+  getPythonTaskStatus,
+  generateKnowledgeGraphWithPython,
+  askKnowledgeGraphWithPython,
+  generateGraphInsightsWithPython,
+  explainConceptWithPython
 };

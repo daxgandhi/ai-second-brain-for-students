@@ -1,14 +1,7 @@
-<!-- 
-  sidebar.html — This file is for reference only.
-  The sidebar HTML is embedded directly in each page.
-  Below is the standard sidebar template used in all pages.
--->
+import os
+import re
 
-<!--
-<button class="sidebar-toggle" id="sidebar-toggle">☰</button>
-<div class="sidebar-overlay" id="sidebar-overlay"></div>
-
-    <aside class="sidebar">
+NEW_SIDEBAR = """    <aside class="sidebar">
       <div class="sidebar-logo">
         <div class="logo-text">Cortex <span>AI</span></div>
         <div class="logo-sub">Study Assistant</div>
@@ -44,5 +37,27 @@
           <span class="nav-icon" style="margin:0;">🚪</span> Logout
         </button>
       </div>
-    </aside>
--->
+    </aside>"""
+
+frontend_dir = os.path.dirname(os.path.abspath(__file__))
+
+for filename in os.listdir(frontend_dir):
+    if filename.endswith(".html") and filename not in ["index.html", "login.html", "register.html"]:
+        filepath = os.path.join(frontend_dir, filename)
+        with open(filepath, "r", encoding="utf-8") as f:
+            content = f.read()
+        
+        # Replace the aside block using a regex.
+        new_content = re.sub(
+            r'^[ \t]*<aside class="sidebar">.*?</aside>',
+            NEW_SIDEBAR,
+            content,
+            flags=re.DOTALL | re.MULTILINE
+        )
+        
+        if new_content != content:
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write(new_content)
+            print(f"Updated {filename}")
+        else:
+            print(f"No match or no change in {filename}")

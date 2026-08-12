@@ -194,23 +194,28 @@
         </div>
       </div>
       <nav class="sidebar-nav">
-        <div class="nav-label">Main</div>
-        <a href="dashboard.html" class="nav-item" data-page="dashboard"><span class="nav-icon">🏠</span> Dashboard</a>
-        <a href="analytics.html" class="nav-item" data-page="analytics"> <span class="nav-icon">📊</span> Analytics</a>
+        <div class="nav-label">MAIN</div>
+        <a href="dashboard.html" class="nav-item" data-page="dashboard"> <span class="nav-icon">🏠</span> Dashboard</a>
         <a href="chat.html" class="nav-item" data-page="chat"> <span class="nav-icon">💬</span> AI Chat</a>
-        <div class="nav-label" style="margin-top:12px;">Tools</div>
-        <a href="rag.html" class="nav-item" data-page="rag"> <span class="nav-icon">📚</span> Chat with Notes</a>
+        <a href="analytics.html" class="nav-item" data-page="analytics"> <span class="nav-icon">📊</span> Analytics</a>
+        
+        <div class="nav-label" style="margin-top:16px;">KNOWLEDGE</div>
         <a href="upload.html" class="nav-item" data-page="upload"> <span class="nav-icon">📁</span> Upload Notes</a>
+        <a href="rag.html" class="nav-item" data-page="rag"> <span class="nav-icon">📚</span> Chat with Notes</a>
         <a href="summary.html" class="nav-item" data-page="summary"> <span class="nav-icon">📋</span> Summary</a>
+        <a href="knowledge-graph.html" class="nav-item" data-page="knowledge-graph"> <span class="nav-icon">🧠</span> Knowledge Graph</a>
+        
+        <div class="nav-label" style="margin-top:16px;">STUDY</div>
         <a href="exam.html" class="nav-item" data-page="exam"> <span class="nav-icon">🎯</span> Exam Generator</a>
         <a href="exam-history.html" class="nav-item" data-page="exam-history"> <span class="nav-icon">📜</span> Exam History</a>
-        <a href="flashcards.html" class="nav-item" data-page="flashcards"> <span class="nav-icon">📇</span>
-          Flashcards</a>
+        <a href="flashcards.html" class="nav-item" data-page="flashcards"> <span class="nav-icon">📇</span> Flashcards</a>
         <a href="session.html" class="nav-item" data-page="session"> <span class="nav-icon">⏱️</span> Study Timer</a>
         <a href="planner.html" class="nav-item" data-page="planner"> <span class="nav-icon">📅</span> Study Planner</a>
       </nav>
       <div class="sidebar-footer">
-        <button id="logout-btn">🚪 Logout</button>
+        <button id="logout-btn" class="btn btn-ghost" style="width:100%; justify-content:center; border: 1px solid rgba(239,68,68,0.3); color: var(--danger);">
+          <span class="nav-icon" style="margin:0;">🚪</span> Logout
+        </button>
       </div>
     </aside>
 
@@ -294,8 +299,9 @@
             <div id="notes-loading" style="text-align:center;padding:32px;color:var(--text-muted);">Loading...</div>
             <div id="notes-grid" class="notes-grid" style="display:none;"></div>
             <div id="notes-empty" class="empty-state" style="display:none;">
-              <div class="empty-icon">📂</div>
-              <p>No notes uploaded yet. Add your first note!</p>
+              <div class="empty-icon">📚</div>
+              <h3>No notes uploaded yet</h3>
+              <p>Add a PDF or text note above to get started with your study session.</p>
             </div>
           </div>
         </div>

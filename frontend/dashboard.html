@@ -8,61 +8,81 @@
   <link rel="stylesheet" href="css/style.css" />
   <style>
     .welcome-banner {
-      background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.1));
-      border: 1px solid rgba(59, 130, 246, 0.2);
+      background: var(--surface);
+      border: 1px solid var(--border);
       border-radius: var(--radius-lg);
       padding: 28px 32px;
-      margin-bottom: 28px;
+      margin-bottom: 32px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
       gap: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .welcome-banner::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 4px; height: 100%;
+      background: var(--accent-primary);
     }
 
     .welcome-banner h2 {
-      font-size: 1.5rem;
-      margin-bottom: 4px;
+      font-size: 1.4rem;
+      margin-bottom: 6px;
     }
 
     .welcome-banner p {
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       color: var(--text-secondary);
     }
 
     .quick-actions {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 14px;
-      margin-bottom: 32px;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 16px;
+      margin-bottom: 40px;
     }
 
     .quick-btn {
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 20px;
+      padding: 20px 16px;
       text-align: center;
       cursor: pointer;
       transition: var(--transition);
       text-decoration: none;
-      display: block;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
     }
 
     .quick-btn:hover {
-      border-color: var(--accent);
-      transform: translateY(-3px);
-      box-shadow: var(--shadow-glow);
+      border-color: var(--accent-primary);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      background: var(--surface-elevated);
     }
 
     .quick-btn .q-icon {
-      font-size: 1.8rem;
-      margin-bottom: 8px;
+      font-size: 1.6rem;
+      margin-bottom: 12px;
+      color: var(--text-primary);
     }
 
     .quick-btn .q-label {
-      font-size: 0.88rem;
+      font-size: 0.85rem;
       font-weight: 600;
+      color: var(--text-secondary);
+      transition: var(--transition);
+    }
+
+    .quick-btn:hover .q-label {
       color: var(--text-primary);
     }
 
@@ -174,23 +194,28 @@
         </div>
       </div>
       <nav class="sidebar-nav">
-        <div class="nav-label">Main</div>
-        <a href="dashboard.html" class="nav-item" data-page="dashboard"><span class="nav-icon">🏠</span> Dashboard</a>
-        <a href="analytics.html" class="nav-item" data-page="analytics"> <span class="nav-icon">📊</span> Analytics</a>
+        <div class="nav-label">MAIN</div>
+        <a href="dashboard.html" class="nav-item" data-page="dashboard"> <span class="nav-icon">🏠</span> Dashboard</a>
         <a href="chat.html" class="nav-item" data-page="chat"> <span class="nav-icon">💬</span> AI Chat</a>
-        <div class="nav-label" style="margin-top:12px;">Tools</div>
-        <a href="rag.html" class="nav-item" data-page="rag"> <span class="nav-icon">📚</span> Chat with Notes</a>
+        <a href="analytics.html" class="nav-item" data-page="analytics"> <span class="nav-icon">📊</span> Analytics</a>
+        
+        <div class="nav-label" style="margin-top:16px;">KNOWLEDGE</div>
         <a href="upload.html" class="nav-item" data-page="upload"> <span class="nav-icon">📁</span> Upload Notes</a>
+        <a href="rag.html" class="nav-item" data-page="rag"> <span class="nav-icon">📚</span> Chat with Notes</a>
         <a href="summary.html" class="nav-item" data-page="summary"> <span class="nav-icon">📋</span> Summary</a>
+        <a href="knowledge-graph.html" class="nav-item" data-page="knowledge-graph"> <span class="nav-icon">🧠</span> Knowledge Graph</a>
+        
+        <div class="nav-label" style="margin-top:16px;">STUDY</div>
         <a href="exam.html" class="nav-item" data-page="exam"> <span class="nav-icon">🎯</span> Exam Generator</a>
         <a href="exam-history.html" class="nav-item" data-page="exam-history"> <span class="nav-icon">📜</span> Exam History</a>
-        <a href="flashcards.html" class="nav-item" data-page="flashcards"> <span class="nav-icon">📇</span>
-          Flashcards</a>
+        <a href="flashcards.html" class="nav-item" data-page="flashcards"> <span class="nav-icon">📇</span> Flashcards</a>
         <a href="session.html" class="nav-item" data-page="session"> <span class="nav-icon">⏱️</span> Study Timer</a>
         <a href="planner.html" class="nav-item" data-page="planner"> <span class="nav-icon">📅</span> Study Planner</a>
       </nav>
       <div class="sidebar-footer">
-        <button id="logout-btn">🚪 Logout</button>
+        <button id="logout-btn" class="btn btn-ghost" style="width:100%; justify-content:center; border: 1px solid rgba(239,68,68,0.3); color: var(--danger);">
+          <span class="nav-icon" style="margin:0;">🚪</span> Logout
+        </button>
       </div>
     </aside>
 
@@ -206,7 +231,7 @@
         <div class="welcome-banner">
           <div>
             <h2>Ready to study smarter?</h2>
-            <p>Use AI tools to upload notes, get summaries, practice with MCQs, and plan your study schedule.</p>
+            <p>Use Cortex AI to summarize notes, generate practice exams, and plan your schedule.</p>
           </div>
           <a href="chat.html" class="btn btn-primary">💬 Start Chatting</a>
         </div>
@@ -277,6 +302,10 @@
             <div class="q-icon">📋</div>
             <div class="q-label">Summarize</div>
           </a>
+          <a href="knowledge-graph.html" class="quick-btn">
+            <div class="q-icon">🧠</div>
+            <div class="q-label">Knowledge Graph</div>
+          </a>
           <a href="exam.html" class="quick-btn">
             <div class="q-icon">🎯</div>
             <div class="q-label">Generate MCQs</div>
@@ -308,8 +337,10 @@
           <div id="notes-loading">Loading your notes...</div>
           <div id="notes-list" class="notes-list" style="display:none;"></div>
           <div id="notes-empty" class="empty-state" style="display:none;">
-            <div class="empty-icon">📂</div>
-            <p>No notes yet. <a href="upload.html">Upload your first note →</a></p>
+            <div class="empty-icon">📚</div>
+            <h3>No notes yet</h3>
+            <p>Upload your first note and let Cortex AI turn it into summaries, concepts and study material.</p>
+            <a href="upload.html" class="btn btn-primary">Upload Note</a>
           </div>
         </div>
       </div>
@@ -354,19 +385,25 @@
             const weakTopics = analyticsData.data.weakTopics || [];
             if (weakTopics.length > 0) {
               document.getElementById('weak-topics-section').style.display = 'block';
+              document.querySelector('#weak-topics-section h3').style.color = 'var(--text-primary)';
+              document.querySelector('#weak-topics-section h3').innerHTML = 'Areas to Review';
               const grid = document.getElementById('weak-topics-grid');
-              grid.innerHTML = weakTopics.map(wt => `
-                <div class="stat-card" style="border-left: 4px solid var(--danger);">
-                  <div class="stat-info" style="width: 100%;">
-                    <div style="font-size: 0.82rem; color: var(--danger); font-weight: 700; margin-bottom: 4px;">Weak Topic</div>
-                    <div class="stat-label" style="font-weight: 600; color: var(--text-primary); margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(wt.topic)}</div>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                      <span style="font-size: 0.9rem; font-weight: 700;">${wt.avgScore}% Accuracy</span>
-                      <a href="exam.html" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;">Take Quiz</a>
-                    </div>
+              grid.innerHTML = weakTopics.map(wt => {
+                const isCritical = wt.avgScore < 40;
+                const color = isCritical ? 'var(--danger)' : 'var(--warning)';
+                const bg = isCritical ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 158, 11, 0.1)';
+                return `
+                <div class="card" style="padding: 16px; display: flex; flex-direction: column; justify-content: space-between; border-top: 3px solid ${color};">
+                  <div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; margin-bottom: 4px; letter-spacing: 0.05em;">Needs Practice</div>
+                    <div style="font-weight: 600; color: var(--text-primary); font-size: 1.05rem; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${escapeHtml(wt.topic)}</div>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.85rem; font-weight: 700; color: ${color}; background: ${bg}; padding: 4px 8px; border-radius: var(--radius-sm);">${wt.avgScore}% Accuracy</span>
+                    <a href="exam.html" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">Practice →</a>
                   </div>
                 </div>
-              `).join('');
+              `}).join('');
             }
           }
         } catch (analyticsErr) {

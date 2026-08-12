@@ -10,9 +10,15 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
 
     # LLM Settings
-    LLM_PROVIDER: str = "gemini"  # gemini | ollama | openai | claude
+    LLM_PROVIDER: str = "gemini"  # Legacy, kept for backward compatibility
+    AI_PROVIDER: str = "auto"     # auto | gemini | groq | ollama
+    AI_PROVIDER_ORDER: str = "gemini,groq"
+
     GEMINI_API_KEY: Optional[str] = None
     GEMINI_MODEL: str = "gemini-2.5-flash"
+
+    GROQ_API_KEY: Optional[str] = None
+    GROQ_MODEL: str = "llama-3.1-8b-instant"
 
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "llama3"

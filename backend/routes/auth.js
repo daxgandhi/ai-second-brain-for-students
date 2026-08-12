@@ -87,6 +87,47 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// ── SOCIAL LOGIN ──────────────────────────────────────────────
+// POST /api/auth/social-login
+router.post('/social-login', async (req, res) => {
+  try {
+    const { provider, email, name } = req.body;
+
+    if (!email || !provider) {
+      return res.status(400).json({ message: 'Missing required social profile information' });
+    }
+
+    const userName = name || email.split('@')[0];
+    
+    // Find or create user by email
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // Create secure random password for social user profile
+      const crypto = require('crypto');
+      const randomPassword = provider + '_' + crypto.randomBytes(16).toString('hex');
+      user = await User.create({
+        name: userName,
+        email: email.toLowerCase(),
+        password: randomPassword
+      });
+      console.log(`[Social Auth] Created new user via ${provider}: ${email}`);
+    } else {
+      console.log(`[Social Auth] User logged in via ${provider}: ${email}`);
+    }
+
+    res.json({
+      message: `Successfully authenticated via ${provider}`,
+      token: generateToken(user._id),
+      user: { id: user._id, name: user.name, email: user.email }
+    });
+
+  } catch (error) {
+    console.error('Social login error:', error);
+    res.status(500).json({ message: 'Server error during social login' });
+  }
+});
+
 // ── GET CURRENT USER ──────────────────────────────────────────
 // GET /api/auth/me  (Protected)
 router.get('/me', protect, async (req, res) => {

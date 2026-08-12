@@ -22,8 +22,6 @@ def get_prompt(template_name: str, **kwargs) -> str:
             _prompt_cache[template_name] = f.read()
 
     template_str = _prompt_cache[template_name]
-    try:
-        return template_str.format(**kwargs)
-    except KeyError as e:
-        logger.error(f"Missing parameter {e} for prompt template {template_name}")
-        raise AIServiceException(f"Missing required prompt argument: {e}")
+    for k, v in kwargs.items():
+        template_str = template_str.replace(f"{{{k}}}", str(v))
+    return template_str

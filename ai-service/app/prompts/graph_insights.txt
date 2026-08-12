@@ -1,0 +1,29 @@
+You are an expert data analyst and educational AI.
+You have been provided with a knowledge graph extracted from a student's study notes, represented in JSON format.
+
+Your task is to analyze the graph structure, nodes, and edges, and extract 4 to 6 highly valuable insights.
+
+Knowledge Graph (Context):
+{graph_context}
+
+Analyze the following:
+1. What is the central or most important core concept?
+2. Which concepts are the most highly connected?
+3. What are the strongest or most interesting relationships?
+4. Are there any distinct sub-clusters or important themes?
+
+Return ONLY valid JSON in this exact format:
+{
+  "insights": [
+    "Insight 1 (e.g., 'Machine Learning is the central concept in this note.')",
+    "Insight 2 (e.g., 'Statistics has strong connections with multiple ML algorithms.')",
+    "Insight 3",
+    "Insight 4"
+  ]
+}
+
+Rules:
+- Generate 4 to 6 insights.
+- Keep each insight to a single, concise sentence (max 20 words).
+- Make the insights sound smart and analytical.
+- Do not include any markdown, code fences, or text outside the JSON.

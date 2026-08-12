@@ -3,7 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.core.logging import logger
 from app.core.exceptions import AIServiceException, ai_service_exception_handler, global_exception_handler
-from app.routers import health, summary, tasks, document, rag
+from app.routers import (
+    health, summary, tasks, document, rag,
+    chat, flashcards, exam, planner, recommendation,
+    knowledge_graph
+)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -30,6 +34,12 @@ app.include_router(summary.router)
 app.include_router(tasks.router)
 app.include_router(document.router)
 app.include_router(rag.router)
+app.include_router(chat.router)
+app.include_router(flashcards.router)
+app.include_router(exam.router)
+app.include_router(planner.router)
+app.include_router(recommendation.router)
+app.include_router(knowledge_graph.router)
 
 @app.on_event("startup")
 async def startup_event():

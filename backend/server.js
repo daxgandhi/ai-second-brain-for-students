@@ -29,6 +29,8 @@ app.use(express.urlencoded({ extended: true })); // Parse form data
 
 // Serve uploaded files as static assets
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Serve frontend application static assets
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 // ── Routes ────────────────────────────────────────────────────
 const authRoutes = require('./routes/auth');
@@ -41,6 +43,7 @@ const ragRoutes = require('./routes/rag');
 const flashcardsRoutes = require('./routes/flashcards');
 const sessionsRoutes = require('./routes/sessions');
 const analyticsRoutes = require('./routes/analytics');
+const knowledgeGraphRoutes = require('./routes/knowledgeGraph');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/notes', notesRoutes);
@@ -52,6 +55,7 @@ app.use('/api/rag', ragRoutes);
 app.use('/api/flashcards', flashcardsRoutes);
 app.use('/api/sessions', sessionsRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/knowledge-graph', knowledgeGraphRoutes);
 
 // ── Health Check ──────────────────────────────────────────────
 app.get('/api/health', (req, res) => {

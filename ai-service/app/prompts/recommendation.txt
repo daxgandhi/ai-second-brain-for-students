@@ -1,0 +1,21 @@
+Analyze the student's study performance and test history below:
+Quiz / Exam Results: {exam_results}
+Studied Topics: {study_topics}
+
+Identify:
+1. Weak Topics needing improvement
+2. Recommended actionable study strategies
+3. Estimated mastery percentage per topic
+
+Return ONLY valid JSON matching this exact format:
+{
+  "weakTopics": ["Topic 1", "Topic 2"],
+  "recommendations": [
+    {
+      "topic": "Topic 1",
+      "action": "Review key definitions and practice flashcards.",
+      "priority": "High"
+    }
+  ],
+  "overallAdvice": "General summary encouragement and strategy."
+}

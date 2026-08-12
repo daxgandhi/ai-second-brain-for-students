@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Knowledge Graph — Cortex AI</title>
+  <meta name="description" content="Visualize your study notes as an interactive AI-powered knowledge graph. Explore concepts and their relationships." />
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Vis.js for Network Graph -->
+  <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  
+  <style>
+    /* ── Page Layout ──────────────────────────────────── */
+    .kg-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 20px;
+      align-items: start;
+      position: relative;
+    }
+
+    /* ── Control Panel (Left) ─────────────────────────── */
+    .kg-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: sticky;
+      top: 24px;
+      max-height: calc(100vh - 120px);
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .kg-panel::-webkit-scrollbar { width: 4px; }
+    .kg-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .kg-panel .card {
+      padding: 16px;
+    }
+
+    .panel-section-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+    }
+
+    /* Note Select List */
+    .note-select-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .note-select-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+      border: 1px solid transparent;
+      font-size: 0.85rem;
+    }
+    .note-select-item:hover { background: var(--bg-hover); border-color: var(--border); }
+    .note-select-item.active { background: rgba(59, 130, 246, 0.1); border-color: var(--accent); color: var(--accent); font-weight: 500;}
+
+    /* Checkbox Filters */
+    .filter-list { display: flex; flex-direction: column; gap: 8px; }
+    .filter-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+    .filter-item input { accent-color: var(--accent); cursor: pointer; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+
+    /* Stats Grid */
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 8px;
+      text-align: center;
+    }
+    .stat-val { font-size: 1.4rem; font-weight: 700; color: var(--accent); font-family: var(--font-display); }
+    .stat-lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-top: 4px; }
+
+    /* ── Main Graph Container ─────────────────────────── */
+    .kg-main {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+    }
+
+    .kg-top-bar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .search-wrapper {
+      position: relative;
+      flex: 1;
+    }
+    .search-wrapper input {
+      width: 100%;
+      padding: 12px 16px 12px 36px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-primary);
+      font-size: 0.9rem;
+    }
+    .search-wrapper::before {
+      content: '🔍';
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+    #clear-search {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: none;
+    }
+
+    .ask-btn {
+      background: linear-gradient(135deg, var(--accent) 0%, #6366f1 100%);
+      color: #fff;
+      border: none;
+      padding: 0 20px;
+      height: 44px;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .ask-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4); }
+    .ask-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* Canvas Wrapper */
+    .canvas-wrapper {
+      background-color: #0f172a;
+      background-image: radial-gradient(circle at center, rgba(59, 130, 246, 0.15) 0%, transparent 60%),
+                        radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+      background-size: 100% 100%, 24px 24px;
+      background-position: center center, 0 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      height: 600px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 0 60px rgba(0,0,0,0.5);
+    }
+
+    /* Vis.js Tooltip overriding default style */
+    div.vis-tooltip {
+      position: absolute;
+      background: rgba(15, 23, 42, 0.85) !important;
+      backdrop-filter: blur(12px) !important;
+      -webkit-backdrop-filter: blur(12px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border-radius: var(--radius) !important;
+      padding: 12px 16px !important;
+      color: var(--text-primary) !important;
+      font-family: var(--font-sans) !important;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6) !important;
+      z-index: 100;
+      pointer-events: none;
+      max-width: 300px;
+    }
+    div.vis-tooltip b {
+      color: var(--accent);
+      font-size: 1.05rem;
+      display: block;
+      margin-bottom: 6px;
+    }
+    div.vis-tooltip small {
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      line-height: 1.5;
+      display: block;
+    }
+
+    #vis-network {
+      width: 100%;
+      height: 100%;
+      outline: none;
+    }
+
+    /* Floating Graph Controls */
+    .graph-controls {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      display: flex;
+      gap: 8px;
+      background: var(--bg-secondary);
+      padding: 6px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      z-index: 10;
+    }
+    .control-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: var(--transition);
+    }
+    .control-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+    /* ── Right Panel (Details Drawer) ─────────────────── */
+    .kg-right-panel {
+      position: absolute;
+      top: 0;
+      right: -360px;
+      width: 360px;
+      height: 100%;
+      box-sizing: border-box;
+      background: rgba(15, 23, 42, 0.85); /* Glassmorphism */
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-left: 1px solid var(--border);
+      border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+      padding: 20px;
+      transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 20;
+      overflow-y: auto;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .kg-right-panel.open { right: 0; }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .panel-header h3 {
+      font-size: 1.1rem;
+      color: var(--text-primary);
+      margin: 0 0 4px 0;
+      line-height: 1.3;
+    }
+    .badge {
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      display: inline-block;
+    }
+    .close-panel {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 0;
+    }
+    .close-panel:hover { color: var(--text-primary); }
+
+    .detail-block {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+    }
+    .detail-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    .detail-text {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    .conn-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .conn-list li {
+      font-size: 0.8rem;
+      color: var(--text-primary);
+      background: var(--bg-hover);
+      padding: 6px 8px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .conn-list li::before { content: '•'; color: var(--accent); }
+
+    /* ── AI Insights ──────────────────────────────────── */
+    .insights-card {
+      background: linear-gradient(145deg, var(--bg-card) 0%, rgba(59, 130, 246, 0.05) 100%);
+      border: 1px solid var(--border);
+      border-top: 2px solid var(--accent);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: none;
+      animation: fadeUp 0.4s ease forwards;
+    }
+    .insights-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      font-weight: 600;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+    }
+    .insights-header i { font-style: normal; font-size: 1.2rem; }
+    .insights-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .insight-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    .insight-item::before {
+      content: '✨';
+      font-size: 1rem;
+      flex-shrink: 0;
+      opacity: 0.8;
+    }
+
+    /* ── Ask Graph Modal ──────────────────────────────── */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+      display: none; justify-content: center; align-items: center; z-index: 1000;
+    }
+    .modal-overlay.active { display: flex; }
+    .ask-modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .ask-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-secondary);
+    }
+    .ask-header h3 { margin: 0; font-size: 1.1rem; color: var(--text-primary); }
+    .ask-body {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+    .ask-input {
+      width: 100%;
+      padding: 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-primary);
+      font-family: inherit;
+      resize: vertical;
+      min-height: 80px;
+    }
+    .ask-response {
+      background: rgba(59, 130, 246, 0.05);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: var(--radius);
+      padding: 16px;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      line-height: 1.6;
+      display: none;
+    }
+    .ask-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    /* ── Empty / Loading States ───────────────────────── */
+    .overlay-state {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-card);
+      z-index: 5;
+      text-align: center;
+      padding: 20px;
+    }
+    .overlay-state h3 { margin: 16px 0 8px; color: var(--text-primary); }
+    .overlay-state p { color: var(--text-muted); font-size: 0.9rem; max-width: 300px; }
+    
+    .loader-spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .kg-layout { grid-template-columns: 1fr; }
+      .kg-panel { position: static; max-height: none; }
+      .canvas-wrapper { height: 450px; }
+      .kg-right-panel {
+        position: fixed;
+        right: -100%; width: 85%; max-width: 320px;
+        z-index: 100; border-radius: 0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-text">Cortex <span>AI</span></div>
+        <div class="logo-sub">Study Assistant</div>
+      </div>
+      <div class="sidebar-user">
+        <div class="user-avatar" id="sidebar-avatar">U</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebar-name">Loading...</div>
+          <div class="user-email" id="sidebar-email"></div>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-label">MAIN</div>
+        <a href="dashboard.html" class="nav-item" data-page="dashboard"> <span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="chat.html" class="nav-item" data-page="chat"> <span class="nav-icon">💬</span> AI Chat</a>
+        <a href="analytics.html" class="nav-item" data-page="analytics"> <span class="nav-icon">📊</span> Analytics</a>
+        
+        <div class="nav-label" style="margin-top:16px;">KNOWLEDGE</div>
+        <a href="upload.html" class="nav-item" data-page="upload"> <span class="nav-icon">📁</span> Upload Notes</a>
+        <a href="rag.html" class="nav-item" data-page="rag"> <span class="nav-icon">📚</span> Chat with Notes</a>
+        <a href="summary.html" class="nav-item" data-page="summary"> <span class="nav-icon">📋</span> Summary</a>
+        <a href="knowledge-graph.html" class="nav-item" data-page="knowledge-graph"> <span class="nav-icon">🧠</span> Knowledge Graph</a>
+        
+        <div class="nav-label" style="margin-top:16px;">STUDY</div>
+        <a href="exam.html" class="nav-item" data-page="exam"> <span class="nav-icon">🎯</span> Exam Generator</a>
+        <a href="exam-history.html" class="nav-item" data-page="exam-history"> <span class="nav-icon">📜</span> Exam History</a>
+        <a href="flashcards.html" class="nav-item" data-page="flashcards"> <span class="nav-icon">📇</span> Flashcards</a>
+        <a href="session.html" class="nav-item" data-page="session"> <span class="nav-icon">⏱️</span> Study Timer</a>
+        <a href="planner.html" class="nav-item" data-page="planner"> <span class="nav-icon">📅</span> Study Planner</a>
+      </nav>
+      <div class="sidebar-footer">
+        <button id="logout-btn" class="btn btn-ghost" style="width:100%; justify-content:center; border: 1px solid rgba(239,68,68,0.3); color: var(--danger);">
+          <span class="nav-icon" style="margin:0;">🚪</span> Logout
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="page-header">
+        <h1>🧠 Knowledge Graph</h1>
+        <p>AI-powered visual map of concepts in your notes</p>
+      </div>
+
+      <div class="page-body">
+        <div class="kg-layout">
+          
+          <!-- Left Panel -->
+          <div class="kg-panel">
+            <!-- Source Note Selection -->
+            <div class="card">
+              <div class="panel-section-title">Source Note</div>
+              <div id="notes-loading" style="color: var(--text-muted); font-size: 0.85rem;">Loading notes...</div>
+              <div id="notes-list" class="note-select-list" style="display:none;"></div>
+              <div id="notes-empty" style="display:none; color: var(--text-muted); font-size:0.85rem;">No notes found.</div>
+              <button id="generate-btn" class="btn btn-primary" style="width:100%; margin-top:12px;" disabled>
+                Generate Graph
+              </button>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+              <div class="stat-box">
+                <div class="stat-val" id="stat-nodes">0</div>
+                <div class="stat-lbl">Concepts</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-val" id="stat-edges">0</div>
+                <div class="stat-lbl">Relations</div>
+              </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="card">
+              <div class="panel-section-title">Concept Types</div>
+              <div class="filter-list" id="filter-list">
+                <label class="filter-item">
+                  <input type="checkbox" value="main" checked> 
+                  <span class="legend-dot" style="background:#3b82f6;"></span> Core Concept
+                </label>
+                <label class="filter-item">
+                  <input type="checkbox" value="sub" checked> 
+                  <span class="legend-dot" style="background:#8b5cf6;"></span> Sub-Concept
+                </label>
+                <label class="filter-item">
+                  <input type="checkbox" value="algorithm" checked> 
+                  <span class="legend-dot" style="background:#10b981;"></span> Algorithm/Technique
+                </label>
+                <label class="filter-item">
+                  <input type="checkbox" value="example" checked> 
+                  <span class="legend-dot" style="background:#f59e0b;"></span> Real-world Example
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main Graph Area -->
+          <div class="kg-main">
+            <!-- Top Bar -->
+            <div class="kg-top-bar">
+              <div class="search-wrapper">
+                <input type="text" id="search-input" placeholder="Search concepts..." disabled>
+                <button id="clear-search">✖</button>
+              </div>
+              <button class="ask-btn" id="open-ask-btn" disabled>
+                ✨ Ask Graph
+              </button>
+            </div>
+
+            <!-- Canvas Wrapper -->
+            <div class="canvas-wrapper">
+              <!-- Overlay States -->
+              <div id="state-empty" class="overlay-state">
+                <div style="font-size:3rem; opacity:0.5; margin-bottom:10px;">🧠</div>
+                <h3>No Graph Selected</h3>
+                <p>Select a note and generate a knowledge graph to explore concepts.</p>
+              </div>
+              <div id="state-loading" class="overlay-state" style="display:none;">
+                <div class="loader-spinner"></div>
+                <h3 id="loading-text">Generating Knowledge Graph...</h3>
+                <p>AI is extracting concepts and relationships.</p>
+              </div>
+
+              <!-- Controls -->
+              <div class="graph-controls" id="graph-controls" style="display:none;">
+                <button class="control-btn" id="btn-zoom-in" title="Zoom In">＋</button>
+                <button class="control-btn" id="btn-zoom-out" title="Zoom Out">－</button>
+                <button class="control-btn" id="btn-fit" title="Fit to screen">⛶</button>
+              </div>
+
+              <!-- Vis Network Container -->
+              <div id="vis-network"></div>
+
+              <!-- Right Detail Panel Drawer -->
+              <div class="kg-right-panel" id="detail-panel">
+                <div class="panel-header">
+                  <div>
+                    <span class="badge" id="dp-badge" style="background:rgba(59,130,246,0.15); color:#60a5fa;">Type</span>
+                    <h3 id="dp-title">Concept Name</h3>
+                  </div>
+                  <button class="close-panel" id="close-panel-btn">✖</button>
+                </div>
+                
+                <div id="dp-loading" style="display:none; flex-direction:column; gap:12px; margin-top:20px; align-items:center;">
+                   <div class="loader-spinner" style="width:30px;height:30px;border-width:2px;"></div>
+                   <div style="font-size:0.85rem; color:var(--text-muted);">✨ Understanding this concept...</div>
+                </div>
+
+                <div id="dp-error" style="display:none; color:#ef4444; font-size:0.85rem; background:rgba(239, 68, 68, 0.1); padding:12px; border-radius:var(--radius-sm); border:1px solid rgba(239,68,68,0.2); text-align:center;">
+                  <div style="margin-bottom:8px;">Unable to generate an explanation.</div>
+                  <button id="dp-retry-btn" class="btn btn-secondary" style="padding:4px 12px; font-size:0.75rem;">Try Again</button>
+                </div>
+                
+                <div id="dp-content" style="display:none; flex-direction:column; gap:16px;">
+                  <div class="detail-block">
+                    <div class="detail-label">WHAT IS IT?</div>
+                    <div class="detail-text" id="dp-definition">Definition goes here.</div>
+                  </div>
+
+                  <div class="detail-block">
+                    <div class="detail-label">💡 IN SIMPLE WORDS</div>
+                    <div class="detail-text" id="dp-simple">Simple explanation.</div>
+                  </div>
+
+                  <div class="detail-block" id="dp-notes-block">
+                    <div class="detail-label">📚 FROM YOUR NOTES</div>
+                    <div class="detail-text" id="dp-from-notes" style="font-style:italic;">Note context.</div>
+                  </div>
+
+                  <div class="detail-block" id="dp-related-block">
+                    <div class="detail-label">🔗 RELATED CONCEPTS</div>
+                    <ul class="conn-list" id="dp-related">
+                      <!-- populated by js -->
+                    </ul>
+                  </div>
+
+                  <div class="detail-block" id="dp-rel-block">
+                    <div class="detail-label">🔗 RELATIONSHIPS</div>
+                    <ul class="conn-list" id="dp-relationships">
+                      <!-- populated by js -->
+                    </ul>
+                  </div>
+
+                  <button id="dp-open-note-btn" class="btn btn-secondary" style="width:100%; display:none;">Open Source Note</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- AI Insights Bottom Section -->
+            <div class="insights-card" id="insights-card">
+              <div class="insights-header">
+                <i>✨</i> AI Insights
+              </div>
+              <div class="insights-list" id="insights-list">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Ask Modal -->
+  <div class="modal-overlay" id="ask-modal-overlay">
+    <div class="ask-modal">
+      <div class="ask-header">
+        <h3>✨ Ask Knowledge Graph</h3>
+        <button class="close-panel" id="close-ask-btn">✖</button>
+      </div>
+      <div class="ask-body">
+        <textarea class="ask-input" id="ask-input" placeholder="e.g. How is Machine Learning related to Statistics?"></textarea>
+        <div class="ask-response" id="ask-response"></div>
+      </div>
+      <div class="ask-footer">
+        <button class="btn btn-secondary" id="cancel-ask-btn">Close</button>
+        <button class="btn btn-primary" id="submit-ask-btn">Ask AI</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/utils.js"></script>
+  <script>
+    Auth.requireAuth();
+    initSidebar('knowledge-graph');
+
+    // ── UI Elements ───────────────────────────────────────
+    const els = {
+      notesList: document.getElementById('notes-list'),
+      notesLoading: document.getElementById('notes-loading'),
+      notesEmpty: document.getElementById('notes-empty'),
+      generateBtn: document.getElementById('generate-btn'),
+      
+      statNodes: document.getElementById('stat-nodes'),
+      statEdges: document.getElementById('stat-edges'),
+      filterCheckboxes: document.querySelectorAll('.filter-item input'),
+      
+      searchInput: document.getElementById('search-input'),
+      clearSearch: document.getElementById('clear-search'),
+      openAskBtn: document.getElementById('open-ask-btn'),
+      
+      stateEmpty: document.getElementById('state-empty'),
+      stateLoading: document.getElementById('state-loading'),
+      loadingText: document.getElementById('loading-text'),
+      graphControls: document.getElementById('graph-controls'),
+      networkContainer: document.getElementById('vis-network'),
+      
+      detailPanel: document.getElementById('detail-panel'),
+      closePanelBtn: document.getElementById('close-panel-btn'),
+      dpBadge: document.getElementById('dp-badge'),
+      dpTitle: document.getElementById('dp-title'),
+      dpContent: document.getElementById('dp-content'),
+      dpLoading: document.getElementById('dp-loading'),
+      dpError: document.getElementById('dp-error'),
+      dpRetryBtn: document.getElementById('dp-retry-btn'),
+      dpDefinition: document.getElementById('dp-definition'),
+      dpSimple: document.getElementById('dp-simple'),
+      dpNotesBlock: document.getElementById('dp-notes-block'),
+      dpFromNotes: document.getElementById('dp-from-notes'),
+      dpRelatedBlock: document.getElementById('dp-related-block'),
+      dpRelated: document.getElementById('dp-related'),
+      dpRelBlock: document.getElementById('dp-rel-block'),
+      dpRelationships: document.getElementById('dp-relationships'),
+      dpOpenNoteBtn: document.getElementById('dp-open-note-btn'),
+      
+      insightsCard: document.getElementById('insights-card'),
+      insightsList: document.getElementById('insights-list'),
+      
+      askOverlay: document.getElementById('ask-modal-overlay'),
+      closeAskBtn: document.getElementById('close-ask-btn'),
+      cancelAskBtn: document.getElementById('cancel-ask-btn'),
+      submitAskBtn: document.getElementById('submit-ask-btn'),
+      askInput: document.getElementById('ask-input'),
+      askResponse: document.getElementById('ask-response')
+    };
+
+    // ── State ─────────────────────────────────────────────
+    let selectedNoteId = null;
+    let currentGraphRaw = null;
+    let network = null;
+    let nodesDataSet = null;
+    let edgesDataSet = null;
+    let conceptCache = {};
+    let lastSelectedNode = null;
+
+    // Node style configuration
+    const GROUP_STYLES = {
+      main:      { color: { background: '#2563eb', border: '#60a5fa', hover: { background: '#3b82f6', border: '#93c5fd' } }, size: 28, font: { color: '#ffffff', size: 16, face: 'Inter, sans-serif' }, shadow: { enabled: true, color: 'rgba(59, 130, 246, 0.8)', size: 15, x: 0, y: 0 } },
+      sub:       { color: { background: '#7c3aed', border: '#a78bfa', hover: { background: '#8b5cf6', border: '#c4b5fd' } }, size: 20, font: { color: '#e2e8f0', size: 14, face: 'Inter, sans-serif' }, shadow: { enabled: true, color: 'rgba(139, 92, 246, 0.7)', size: 10, x: 0, y: 0 } },
+      algorithm: { color: { background: '#059669', border: '#34d399', hover: { background: '#10b981', border: '#6ee7b7' } }, size: 22, font: { color: '#e2e8f0', size: 14, face: 'Inter, sans-serif' }, shadow: { enabled: true, color: 'rgba(16, 185, 129, 0.7)', size: 10, x: 0, y: 0 } },
+      example:   { color: { background: '#d97706', border: '#fbbf24', hover: { background: '#f59e0b', border: '#fcd34d' } }, size: 18, font: { color: '#cbd5e1', size: 12, face: 'Inter, sans-serif' }, shadow: { enabled: true, color: 'rgba(245, 158, 11, 0.6)', size: 8, x: 0, y: 0 } }
+    };
+
+    // ── Initialization ────────────────────────────────────
+    async function loadNotes() {
+      try {
+        const data = await apiCall('/notes');
+        const notes = data.notes || [];
+        els.notesLoading.style.display = 'none';
+
+        if (notes.length === 0) {
+          els.notesEmpty.style.display = 'block';
+          return;
+        }
+
+        els.notesList.style.display = 'flex';
+        els.notesList.innerHTML = '';
+
+        notes.forEach(note => {
+          const item = document.createElement('div');
+          item.className = 'note-select-item';
+          item.dataset.noteId = note._id;
+          item.innerHTML = `<span>${note.fileType === 'pdf' ? '📄' : '📝'}</span> <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(note.title)}</span>`;
+          item.addEventListener('click', () => selectNote(note._id, item));
+          els.notesList.appendChild(item);
+        });
+      } catch (err) {
+        els.notesLoading.textContent = '⚠️ Failed to load notes.';
+      }
+    }
+
+    function selectNote(noteId, el) {
+      document.querySelectorAll('.note-select-item').forEach(i => i.classList.remove('active'));
+      el.classList.add('active');
+      selectedNoteId = noteId;
+      els.generateBtn.disabled = false;
+      
+      // Reset UI
+      hideDetailPanel();
+      els.insightsCard.style.display = 'none';
+      if(network) {
+        network.destroy();
+        network = null;
+      }
+      els.stateEmpty.style.display = 'flex';
+      els.graphControls.style.display = 'none';
+      els.searchInput.disabled = true;
+      els.openAskBtn.disabled = true;
+
+      checkExistingGraph(noteId);
+    }
+
+    async function checkExistingGraph(noteId) {
+      try {
+        const data = await apiCall(`/knowledge-graph/${noteId}`);
+        if (data.success && data.graph) {
+          els.generateBtn.textContent = 'Regenerate Graph';
+          renderGraph(data.graph);
+        }
+      } catch (e) {
+        els.generateBtn.textContent = 'Generate Graph';
+      }
+    }
+
+    // ── Graph Generation & Rendering ──────────────────────
+    els.generateBtn.addEventListener('click', async () => {
+      if (!selectedNoteId) return;
+      
+      els.stateEmpty.style.display = 'none';
+      els.stateLoading.style.display = 'flex';
+      els.loadingText.textContent = 'Generating Knowledge Graph...';
+      if(network) network.destroy();
+      hideDetailPanel();
+      els.insightsCard.style.display = 'none';
+
+      try {
+        const data = await apiCall('/knowledge-graph/generate', {
+          method: 'POST',
+          body: JSON.stringify({ noteId: selectedNoteId })
+        });
+
+        if (data.success) {
+          renderGraph(data.graph);
+          Toast.success('Knowledge graph generated!');
+        }
+      } catch (err) {
+        els.stateLoading.style.display = 'none';
+        els.stateEmpty.style.display = 'flex';
+        Toast.error(err.message || 'Failed to generate graph');
+      }
+    });
+
+    function renderGraph(graph) {
+      currentGraphRaw = graph;
+      els.stateLoading.style.display = 'none';
+      els.stateEmpty.style.display = 'none';
+      els.graphControls.style.display = 'flex';
+      els.searchInput.disabled = false;
+      els.openAskBtn.disabled = false;
+
+      els.statNodes.textContent = graph.nodes.length;
+      els.statEdges.textContent = graph.edges.length;
+
+      // Prepare Vis.js datasets
+      const visNodes = graph.nodes.map(n => {
+        const style = GROUP_STYLES[n.group] || GROUP_STYLES.sub;
+        return {
+          id: n.id,
+          label: n.label,
+          group: n.group,
+          title: (() => {
+            const el = document.createElement('div');
+            el.innerHTML = `<b>${escapeHtml(n.label)}</b><br><small>${escapeHtml(n.description)}</small>`;
+            return el;
+          })(),
+          ...style,
+          shape: 'dot',
+          borderWidth: 2,
+          borderWidthSelected: 4
+        };
+      });
+
+      const visEdges = graph.edges.map(e => ({
+        from: e.from || e.from_,
+        to: e.to,
+        label: e.label,
+        font: { size: 11, color: '#94a3b8', strokeWidth: 3, strokeColor: '#0f172a', align: 'horizontal' },
+        color: { color: 'rgba(96, 165, 250, 0.25)', highlight: 'rgba(96, 165, 250, 0.8)', hover: 'rgba(96, 165, 250, 0.6)' },
+        arrows: { to: { enabled: true, scaleFactor: 0.45 } },
+        smooth: { type: 'dynamic' },
+        length: 220
+      }));
+
+      nodesDataSet = new vis.DataSet(visNodes);
+      edgesDataSet = new vis.DataSet(visEdges);
+
+      const container = els.networkContainer;
+      const data = { nodes: nodesDataSet, edges: edgesDataSet };
+      const options = {
+        interaction: { hover: true, tooltipDelay: 200, zoomView: true, dragView: true },
+        physics: {
+          barnesHut: { gravitationalConstant: -3000, centralGravity: 0.3, springLength: 150, springConstant: 0.04, damping: 0.09 },
+          maxVelocity: 40,
+          solver: 'barnesHut',
+          timestep: 0.5,
+          stabilization: { iterations: 200, fit: true }
+        }
+      };
+
+      network = new vis.Network(container, data, options);
+
+      // Events
+      network.on("click", handleNetworkClick);
+      network.on("doubleClick", (params) => { if(params.nodes.length) network.focus(params.nodes[0], { scale: 1.5, animation: true }); });
+
+      // Load Insights
+      loadInsights(graph.note || selectedNoteId);
+    }
+
+    // ── Interaction & Filtering ───────────────────────────
+    function handleNetworkClick(params) {
+      if (params.nodes.length > 0) {
+        const nodeId = params.nodes[0];
+        const rawNode = currentGraphRaw.nodes.find(n => n.id === nodeId);
+        if(rawNode) {
+          updateGraphVisualState(nodeId);
+          showNodeDetails(rawNode);
+        }
+      } else if (params.edges.length > 0) {
+        const edgeId = params.edges[0];
+        const visEdge = edgesDataSet.get(edgeId);
+        if(visEdge) {
+          // Dim all except these two nodes and this edge
+          const fromNode = visEdge.from;
+          const toNode = visEdge.to;
+          
+          const nodeUpdates = currentGraphRaw.nodes.map(n => ({
+            id: n.id,
+            color: (n.id === fromNode || n.id === toNode) ? GROUP_STYLES[n.group].color : { background: '#334155', border: '#1e293b' },
+            font: { color: (n.id === fromNode || n.id === toNode) ? '#fff' : '#475569' }
+          }));
+          const edgeUpdates = currentGraphRaw.edges.map(e => ({
+            id: e.id,
+            color: (e.id === edgeId) ? { color: '#60a5fa' } : { color: 'rgba(51, 65, 85, 0.2)' },
+            font: { color: (e.id === edgeId) ? '#60a5fa' : 'transparent' }
+          }));
+          
+          nodesDataSet.update(nodeUpdates);
+          edgesDataSet.update(edgeUpdates);
+
+          showEdgeDetails(visEdge);
+        }
+      } else {
+        restoreGraphVisualState();
+        hideDetailPanel();
+      }
+    }
+
+    function updateGraphVisualState(selectedNodeId) {
+      const connectedNodes = network.getConnectedNodes(selectedNodeId);
+      connectedNodes.push(selectedNodeId);
+
+      const nodeUpdates = currentGraphRaw.nodes.map(n => {
+        const style = GROUP_STYLES[n.group];
+        if (connectedNodes.includes(n.id)) {
+          // Selected or direct neighbor
+          return {
+            id: n.id,
+            color: style.color,
+            font: style.font,
+            borderWidth: n.id === selectedNodeId ? 3 : 1
+          };
+        } else {
+          // Dim unrelated
+          return {
+            id: n.id,
+            color: { background: '#334155', border: '#1e293b' },
+            font: { color: '#475569' },
+            borderWidth: 1
+          };
+        }
+      });
+      nodesDataSet.update(nodeUpdates);
+
+      const connectedEdges = network.getConnectedEdges(selectedNodeId);
+      const edgeUpdates = currentGraphRaw.edges.map(e => {
+        if (connectedEdges.includes(e.id)) {
+          return { id: e.id, color: { color: '#60a5fa' }, font: { color: '#94a3b8' } };
+        } else {
+          return { id: e.id, color: { color: 'rgba(51, 65, 85, 0.2)' }, font: { color: 'transparent' } };
+        }
+      });
+      edgesDataSet.update(edgeUpdates);
+    }
+
+    function restoreGraphVisualState() {
+      if (!currentGraphRaw || !nodesDataSet || !edgesDataSet) return;
+
+      const nodeUpdates = currentGraphRaw.nodes.map(n => ({
+        id: n.id,
+        color: GROUP_STYLES[n.group].color,
+        font: GROUP_STYLES[n.group].font,
+        borderWidth: 1
+      }));
+      nodesDataSet.update(nodeUpdates);
+
+      const edgeUpdates = currentGraphRaw.edges.map(e => ({
+        id: e.id,
+        color: { color: 'rgba(100, 130, 180, 0.4)' },
+        font: { color: 'transparent' } // hidden by default
+      }));
+      edgesDataSet.update(edgeUpdates);
+    }
+
+    async function showNodeDetails(node) {
+      lastSelectedNode = node;
+      els.dpTitle.textContent = node.label;
+      els.dpBadge.textContent = node.group;
+      
+      const style = GROUP_STYLES[node.group] || GROUP_STYLES.sub;
+      els.dpBadge.style.background = style.color.hover.background + '22';
+      els.dpBadge.style.color = style.color.border;
+
+      els.dpLoading.style.display = 'none';
+      els.dpError.style.display = 'none';
+      els.dpContent.style.display = 'none';
+
+      openDetailPanel();
+
+      const cacheKey = `${selectedNoteId}_${node.label}`;
+      
+      if (conceptCache[cacheKey]) {
+        renderExplanation(conceptCache[cacheKey], node);
+      } else {
+        await fetchConceptExplanation(node, cacheKey);
+      }
+    }
+
+    async function fetchConceptExplanation(node, cacheKey) {
+      els.dpLoading.style.display = 'flex';
+      
+      try {
+        const res = await apiCall(`/knowledge-graph/${selectedNoteId}/concept/explain`, {
+          method: 'POST',
+          body: JSON.stringify({ concept: node.label })
+        });
+        
+        if (res.success && res.explanation) {
+          conceptCache[cacheKey] = res.explanation;
+          // Check if user clicked another node while loading
+          if (lastSelectedNode && lastSelectedNode.id === node.id) {
+             renderExplanation(res.explanation, node);
+          }
+        } else {
+          throw new Error('Failed to fetch');
+        }
+      } catch (err) {
+        if (lastSelectedNode && lastSelectedNode.id === node.id) {
+          els.dpLoading.style.display = 'none';
+          els.dpError.style.display = 'block';
+        }
+      }
+    }
+
+    els.dpRetryBtn.addEventListener('click', () => {
+      if (lastSelectedNode) {
+        const cacheKey = `${selectedNoteId}_${lastSelectedNode.label}`;
+        els.dpError.style.display = 'none';
+        fetchConceptExplanation(lastSelectedNode, cacheKey);
+      }
+    });
+
+    function renderExplanation(exp, node) {
+      els.dpLoading.style.display = 'none';
+      els.dpContent.style.display = 'flex';
+
+      els.dpDefinition.textContent = exp.definition || 'Definition unavailable.';
+      els.dpSimple.textContent = exp.simple_explanation || 'Explanation unavailable.';
+      
+      if (exp.from_notes && exp.from_notes !== "No specific context found.") {
+        els.dpNotesBlock.style.display = 'block';
+        els.dpFromNotes.textContent = exp.from_notes;
+      } else {
+        els.dpNotesBlock.style.display = 'none';
+      }
+
+      // Find connections for Relationships and Related Concepts
+      const connectedEdges = currentGraphRaw.edges.filter(e => e.from === node.id || e.from_ === node.id || e.to === node.id);
+      
+      // Render Related Concepts (Clickable)
+      els.dpRelated.innerHTML = '';
+      els.dpRelationships.innerHTML = '';
+      
+      connectedEdges.forEach(e => {
+        const isOutgoing = e.from === node.id || e.from_ === node.id;
+        const otherId = isOutgoing ? e.to : (e.from || e.from_);
+        const otherNode = currentGraphRaw.nodes.find(n => n.id === otherId);
+        
+        if(otherNode) {
+          // Related Concepts Item
+          const rLi = document.createElement('li');
+          rLi.innerHTML = `<strong style="color:var(--text-primary); cursor:pointer;">${escapeHtml(otherNode.label)}</strong>`;
+          rLi.style.cursor = 'pointer';
+          rLi.addEventListener('click', () => {
+            network.focus(otherNode.id, { scale: 1.2, animation: true });
+            network.selectNodes([otherNode.id]);
+            handleNetworkClick({ nodes: [otherNode.id], edges: [] });
+          });
+          els.dpRelated.appendChild(rLi);
+
+          // Relationships Item
+          const relLi = document.createElement('li');
+          relLi.innerHTML = `<span style="color:var(--text-muted);font-size:0.7rem;flex-shrink:0;">${isOutgoing ? 'OUT' : 'IN'}</span> 
+                          <span style="font-size:0.75rem; color:var(--text-secondary);">${escapeHtml(e.label)}</span> 
+                          <strong style="color:var(--text-primary); font-size:0.8rem; margin-left:auto;">${escapeHtml(otherNode.label)}</strong>`;
+          els.dpRelationships.appendChild(relLi);
+        }
+      });
+      
+      els.dpOpenNoteBtn.style.display = 'block';
+      els.dpOpenNoteBtn.onclick = () => window.location.href = `rag.html?noteId=${selectedNoteId}`;
+    }
+
+    function showEdgeDetails(edge) {
+      const fromNode = currentGraphRaw.nodes.find(n => n.id === edge.from);
+      const toNode = currentGraphRaw.nodes.find(n => n.id === edge.to);
+      if(!fromNode || !toNode) return;
+
+      els.dpTitle.textContent = "Relationship";
+      els.dpBadge.textContent = "Edge";
+      els.dpBadge.style.background = 'rgba(100, 130, 180, 0.2)';
+      els.dpBadge.style.color = '#94a3b8';
+      
+      els.dpLoading.style.display = 'none';
+      els.dpError.style.display = 'none';
+      els.dpContent.style.display = 'flex';
+      
+      els.dpDefinition.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:8px; align-items:center; background:var(--bg-secondary); padding:12px; border-radius:var(--radius); margin-bottom:12px;">
+          <strong>${escapeHtml(fromNode.label)}</strong>
+          <span style="color:var(--accent); font-size:0.8rem;">↓ ${escapeHtml(edge.label)} ↓</span>
+          <strong>${escapeHtml(toNode.label)}</strong>
+        </div>
+      `;
+      els.dpSimple.textContent = `This relationship indicates that ${fromNode.label} ${edge.label} ${toNode.label}.`;
+      
+      els.dpNotesBlock.style.display = 'none';
+      els.dpRelatedBlock.style.display = 'none';
+      els.dpRelBlock.style.display = 'none';
+      els.dpOpenNoteBtn.style.display = 'none';
+      
+      openDetailPanel();
+    }
+
+    function openDetailPanel() {
+      if(!els.detailPanel.classList.contains('open')) {
+        els.detailPanel.classList.add('open');
+      }
+    }
+
+    function hideDetailPanel() {
+      els.detailPanel.classList.remove('open');
+      lastSelectedNode = null;
+      restoreGraphVisualState();
+    }
+    els.closePanelBtn.addEventListener('click', hideDetailPanel);
+
+    // Search
+    els.searchInput.addEventListener('input', (e) => {
+      const val = e.target.value.toLowerCase().trim();
+      els.clearSearch.style.display = val ? 'block' : 'none';
+      if(!nodesDataSet) return;
+
+      if(!val) {
+        // Reset
+        const updates = nodesDataSet.get().map(n => ({ id: n.id, hidden: false }));
+        nodesDataSet.update(updates);
+        return;
+      }
+
+      let matchId = null;
+      const updates = nodesDataSet.get().map(n => {
+        const match = n.label.toLowerCase().includes(val);
+        if(match && !matchId) matchId = n.id;
+        return { id: n.id, hidden: !match }; // Hide non-matching (or could use opacity/color)
+      });
+      nodesDataSet.update(updates);
+
+      if(matchId && network) {
+        network.focus(matchId, { scale: 1.2, animation: true });
+        network.selectNodes([matchId]);
+        handleNetworkClick({ nodes: [matchId], edges: [] });
+      }
+    });
+
+    els.clearSearch.addEventListener('click', () => {
+      els.searchInput.value = '';
+      els.searchInput.dispatchEvent(new Event('input'));
+    });
+
+    // Checkbox Filters
+    els.filterCheckboxes.forEach(cb => {
+      cb.addEventListener('change', () => {
+        if(!nodesDataSet || !currentGraphRaw) return;
+        const activeGroups = Array.from(els.filterCheckboxes).filter(c => c.checked).map(c => c.value);
+        
+        const updates = currentGraphRaw.nodes.map(n => {
+          return { id: n.id, hidden: !activeGroups.includes(n.group) };
+        });
+        nodesDataSet.update(updates);
+      });
+    });
+
+    // Controls
+    document.getElementById('btn-zoom-in').addEventListener('click', () => { if(network) network.moveTo({ scale: network.getScale() * 1.5, animation: true }); });
+    document.getElementById('btn-zoom-out').addEventListener('click', () => { if(network) network.moveTo({ scale: network.getScale() / 1.5, animation: true }); });
+    document.getElementById('btn-fit').addEventListener('click', () => { if(network) network.fit({ animation: true }); });
+
+    // ── AI Insights ───────────────────────────────────────
+    async function loadInsights(noteId) {
+      els.insightsCard.style.display = 'none';
+      els.insightsList.innerHTML = '<div class="loader-spinner" style="width:20px;height:20px;border-width:2px;margin:auto;"></div>';
+      els.insightsCard.style.display = 'block';
+
+      try {
+        const data = await apiCall(`/knowledge-graph/${noteId}/insights`, { method: 'POST' });
+        if(data.success && data.insights && data.insights.length) {
+          els.insightsList.innerHTML = data.insights.map(i => `<div class="insight-item">${escapeHtml(i)}</div>`).join('');
+        } else {
+          els.insightsList.innerHTML = '<div class="insight-item">No specific insights could be generated.</div>';
+        }
+      } catch (err) {
+        els.insightsList.innerHTML = '<div class="insight-item" style="color:var(--text-muted);">Failed to load insights.</div>';
+      }
+    }
+
+    // ── Ask Graph Modal ───────────────────────────────────
+    els.openAskBtn.addEventListener('click', () => {
+      els.askOverlay.classList.add('active');
+      els.askInput.value = '';
+      els.askResponse.style.display = 'none';
+      els.askInput.focus();
+    });
+
+    const closeAsk = () => els.askOverlay.classList.remove('active');
+    els.closeAskBtn.addEventListener('click', closeAsk);
+    els.cancelAskBtn.addEventListener('click', closeAsk);
+    
+    els.submitAskBtn.addEventListener('click', async () => {
+      const q = els.askInput.value.trim();
+      if(!q || !selectedNoteId) return;
+
+      els.submitAskBtn.disabled = true;
+      els.submitAskBtn.textContent = 'Thinking...';
+      els.askResponse.style.display = 'block';
+      els.askResponse.innerHTML = '<div class="loader-spinner" style="width:20px;height:20px;border-width:2px;"></div> Analyzing graph...';
+
+      try {
+        const data = await apiCall(`/knowledge-graph/${selectedNoteId}/ask`, {
+          method: 'POST',
+          body: JSON.stringify({ question: q })
+        });
+        if(data.success) {
+          // Format basic markdown (bold/lists)
+          let formatted = escapeHtml(data.answer)
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\n/g, '<br>');
+          els.askResponse.innerHTML = formatted;
+        } else {
+          els.askResponse.textContent = "Error: " + data.message;
+        }
+      } catch (err) {
+        els.askResponse.textContent = "Failed to reach AI service.";
+      } finally {
+        els.submitAskBtn.disabled = false;
+        els.submitAskBtn.textContent = 'Ask AI';
+      }
+    });
+
+    // Init
+    loadNotes();
+  </script>
+</body>
+</html>
