@@ -598,6 +598,16 @@
       renderQuestions();
       updateScore();
     });
+    // ── URL Parameter Prefill ──────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const prefillTopic = urlParams.get('topic');
+      if (prefillTopic) {
+        document.getElementById('topic').value = prefillTopic;
+        // Optionally trigger generation automatically for seamless flow
+        // document.getElementById('generate-btn').click();
+      }
+    });
   </script>
 </body>
 

@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cortex Tutor — AI Guided Learning</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* Premium Layout */
+    .tutor-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr 280px;
+      gap: 24px;
+      height: calc(100vh - 120px);
+      min-height: 600px;
+    }
+
+    /* Left Sidebar: Curriculum */
+    .tutor-sidebar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .tutor-sidebar h3 {
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+
+    .topic-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .topic-item {
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      transition: all 0.2s ease;
+    }
+
+    .topic-item.locked {
+      opacity: 0.6;
+    }
+
+    .topic-item.completed {
+      color: var(--success);
+      border-color: rgba(16, 185, 129, 0.3);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .topic-item.current {
+      color: var(--text-primary);
+      border-color: var(--accent-primary);
+      background: rgba(37, 99, 235, 0.1);
+      box-shadow: 0 0 0 1px var(--accent-primary);
+    }
+
+    .topic-item.review {
+      color: var(--warning);
+      border-color: rgba(245, 158, 11, 0.3);
+      background: rgba(245, 158, 11, 0.05);
+    }
+
+    .topic-icon {
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    /* Center: Lesson/Interaction Area */
+    .tutor-main {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tutor-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-card);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .tutor-content {
+      padding: 32px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .tutor-footer {
+      padding: 20px 24px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-card);
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Lesson Blocks */
+    .lesson-block {
+      margin-bottom: 32px;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    .lesson-block h4 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent-secondary);
+      margin-bottom: 8px;
+    }
+
+    .lesson-block p {
+      font-size: 1.05rem;
+      line-height: 1.6;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .lesson-block.highlight {
+      background: rgba(37, 99, 235, 0.05);
+      border-left: 4px solid var(--accent-primary);
+      padding: 16px 20px;
+      border-radius: 0 var(--radius) var(--radius) 0;
+    }
+
+    /* Question Container */
+    .question-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-top: 32px;
+    }
+
+    .option-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 16px 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 12px;
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .option-btn:hover:not(:disabled) {
+      border-color: var(--accent-primary);
+      background: rgba(37, 99, 235, 0.05);
+    }
+
+    .option-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    .option-btn.selected {
+      border-color: var(--accent-primary);
+      background: rgba(37, 99, 235, 0.1);
+    }
+
+    .option-btn.correct {
+      border-color: var(--success);
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--success);
+    }
+
+    .option-btn.wrong {
+      border-color: var(--danger);
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--danger);
+    }
+
+    /* Right Sidebar: Stats */
+    .tutor-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+    }
+
+    .stat-card h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-top: 0;
+      margin-bottom: 16px;
+    }
+
+    .mastery-circle {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 8px solid var(--bg-card);
+      border-top-color: var(--accent-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px auto;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    /* Full Screen Loader Overlay */
+    #loader-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(4px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      border-radius: var(--radius-lg);
+    }
+
+    .pulse-avatar {
+      font-size: 3rem;
+      animation: pulse 2s infinite;
+      margin-bottom: 16px;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.1); opacity: 0.7; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Feedback Banner */
+    .feedback-banner {
+      padding: 16px 20px;
+      border-radius: var(--radius);
+      margin-top: 24px;
+      display: none;
+    }
+
+    .feedback-banner.success {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: var(--success);
+      display: block;
+    }
+
+    .feedback-banner.error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: var(--danger);
+      display: block;
+    }
+
+    .source-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      text-decoration: none;
+      padding: 8px 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      transition: all 0.2s;
+    }
+    .source-btn:hover {
+      background: var(--surface);
+      color: var(--text-primary);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <div id="sidebar-container"></div>
+
+    <main class="main-content">
+      <header class="topbar">
+        <h1 class="page-title">🧑‍🏫 Cortex Tutor</h1>
+      </header>
+
+      <!-- Initialize State -->
+      <div id="init-state" style="text-align: center; padding: 60px 20px;">
+        <div class="loader-spinner" style="margin: 0 auto 20px auto;"></div>
+        <h2 style="color: var(--text-primary);">Preparing your personalized curriculum...</h2>
+        <p style="color: var(--text-secondary);">Analyzing your notes and Knowledge Graph.</p>
+      </div>
+
+      <!-- Main Tutor UI (Hidden until loaded) -->
+      <div id="tutor-ui" class="tutor-layout" style="display: none;">
+        
+        <!-- Left: Curriculum -->
+        <aside class="tutor-sidebar">
+          <h3>Curriculum</h3>
+          <div class="topic-list" id="curriculum-list">
+            <!-- Populated dynamically -->
+          </div>
+        </aside>
+
+        <!-- Center: Interaction -->
+        <section class="tutor-main">
+          
+          <div id="loader-overlay" style="display: none;">
+            <div class="pulse-avatar">🧑‍🏫</div>
+            <h3 id="loader-text" style="color: #fff; margin: 0;">Generating lesson...</h3>
+          </div>
+
+          <header class="tutor-header">
+            <h2 id="current-topic-title" style="margin: 0; font-size: 1.2rem;">Topic Title</h2>
+            <div id="topic-progress" style="font-size: 0.9rem; color: var(--text-muted);">1 / 5</div>
+          </header>
+
+          <div class="tutor-content" id="tutor-content-area">
+            
+            <!-- Lesson View -->
+            <div id="lesson-view" style="display: none;">
+              <div class="lesson-block">
+                <h4>What is it?</h4>
+                <p id="lesson-definition">...</p>
+              </div>
+              
+              <div class="lesson-block">
+                <h4>In Simple Words</h4>
+                <p id="lesson-simple">...</p>
+              </div>
+
+              <div class="lesson-block">
+                <h4>Real-World Example 📌</h4>
+                <p id="lesson-example">...</p>
+              </div>
+
+              <div class="lesson-block">
+                <h4>How it works</h4>
+                <p id="lesson-how">...</p>
+              </div>
+
+              <div class="lesson-block highlight" style="background: rgba(139, 92, 246, 0.05); border-left-color: var(--accent-secondary);">
+                <h4>Key Points 💡</h4>
+                <ul id="lesson-takeaway" style="font-weight: 600; margin: 0; padding-left: 20px; line-height: 1.6;">
+                  <!-- List items injected here -->
+                </ul>
+              </div>
+            </div>
+
+            <!-- Question View -->
+            <div id="question-view" style="display: none;">
+              <h3 style="color: var(--text-primary); margin-bottom: 24px;">🧠 Knowledge Check</h3>
+              <p id="question-text" style="font-size: 1.1rem; line-height: 1.5; color: var(--text-primary); margin-bottom: 24px;"></p>
+              <div id="options-container">
+                <!-- Buttons injected here -->
+              </div>
+            </div>
+
+            <!-- Feedback View -->
+            <div id="feedback-view" class="feedback-banner">
+              <h3 id="feedback-title" style="margin: 0 0 8px 0;"></h3>
+              <p id="feedback-text" style="margin: 0; line-height: 1.5;"></p>
+              <p id="feedback-explanation" style="margin: 12px 0 0 0; font-size: 0.95rem;"></p>
+              
+              <!-- Adaptive Reteaching -->
+              <div id="feedback-reteach" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(0,0,0,0.1);">
+                <h4 style="margin: 0 0 8px 0; color: var(--danger);">Let's look at this differently:</h4>
+                <p id="reteach-explanation" style="margin: 0 0 12px 0; line-height: 1.5; color: var(--text-primary);"></p>
+                <p id="reteach-example" style="margin: 0; font-style: italic; color: var(--text-secondary);"></p>
+              </div>
+            </div>
+
+          </div>
+
+          <footer class="tutor-footer">
+            <button id="btn-ready" class="btn btn-primary" style="display: none;">I'm Ready →</button>
+            <button id="btn-submit" class="btn btn-primary" style="display: none;" disabled>Submit Answer</button>
+            <button id="btn-next" class="btn btn-primary" style="display: none;">Continue →</button>
+            <button id="btn-retry" class="btn btn-secondary" style="display: none;">Explain Again</button>
+          </footer>
+        </section>
+
+        <!-- Right: Stats & Context -->
+        <aside class="tutor-stats">
+          <div class="stat-card">
+            <h3>Mastery</h3>
+            <div class="mastery-circle" id="mastery-score">0%</div>
+            <p style="text-align: center; color: var(--text-secondary); font-size: 0.85rem; margin: 0;">Average across completed topics</p>
+          </div>
+
+          <div class="stat-card">
+            <h3>Source Material</h3>
+            <p id="source-context" style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">
+              Loading source...
+            </p>
+            <a href="#" id="view-source-btn" target="_blank" class="source-btn">
+              <span>📚</span> View Original Note
+            </a>
+          </div>
+        </aside>
+
+      </div>
+      
+      <!-- Completion State -->
+      <div id="completion-state" style="display: none; text-align: center; padding: 60px 20px;">
+        <div style="font-size: 4rem; margin-bottom: 24px;">🎉</div>
+        <h2 style="color: var(--text-primary); margin-bottom: 12px;">Chapter Completed!</h2>
+        <p style="color: var(--text-secondary); max-width: 400px; margin: 0 auto 32px auto;">
+          You have successfully completed the curriculum and proven your understanding of these concepts.
+        </p>
+        
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; max-width: 600px; margin: 0 auto 32px auto; display: flex; justify-content: space-around;">
+          <div>
+            <div style="font-size: 2rem; font-weight: bold; color: var(--accent-primary);" id="comp-mastery">0%</div>
+            <div style="color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase;">Overall Mastery</div>
+          </div>
+          <div>
+            <div style="font-size: 2rem; font-weight: bold; color: var(--text-primary);" id="comp-accuracy">0%</div>
+            <div style="color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase;">Accuracy</div>
+          </div>
+          <div>
+            <div style="font-size: 2rem; font-weight: bold; color: var(--text-primary);" id="comp-topics">0/0</div>
+            <div style="color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase;">Topics Completed</div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: center; gap: 16px;">
+          <a href="dashboard.html" class="btn btn-primary">Return to Dashboard</a>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="js/utils.js"></script>
+  <script>
+    Auth.requireAuth();
+    initSidebar('dashboard'); // Keeps dashboard active in sidebar or add a separate tutor nav
+
+    // Elements
+    const els = {
+      init: document.getElementById('init-state'),
+      ui: document.getElementById('tutor-ui'),
+      completed: document.getElementById('completion-state'),
+      
+      curriculumList: document.getElementById('curriculum-list'),
+      topicTitle: document.getElementById('current-topic-title'),
+      topicProgress: document.getElementById('topic-progress'),
+      masteryScore: document.getElementById('mastery-score'),
+      
+      loader: document.getElementById('loader-overlay'),
+      loaderText: document.getElementById('loader-text'),
+      
+      lessonView: document.getElementById('lesson-view'),
+      questionView: document.getElementById('question-view'),
+      feedbackView: document.getElementById('feedback-view'),
+      
+      btnReady: document.getElementById('btn-ready'),
+      btnSubmit: document.getElementById('btn-submit'),
+      btnNext: document.getElementById('btn-next'),
+      btnRetry: document.getElementById('btn-retry'),
+      
+      sourceContext: document.getElementById('source-context'),
+      viewSourceBtn: document.getElementById('view-source-btn')
+    };
+
+    let currentSessionId = null;
+    let sessionData = null;
+    let currentQuestionData = null;
+    let selectedOption = null;
+
+    // Load Session
+    async function initTutor() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const noteId = urlParams.get('note_id');
+      const sessionId = urlParams.get('session_id');
+
+      try {
+        if (sessionId) {
+          // Resume
+          const res = await apiCall(`/cortex-tutor/${sessionId}`);
+          if (res.success) {
+            currentSessionId = res.session._id;
+            sessionData = res.session;
+            startLearningFlow();
+          } else {
+            alert('Session not found.');
+            window.location.href = 'dashboard.html';
+          }
+        } else if (noteId) {
+          // Start New
+          const res = await apiCall('/cortex-tutor/start', {
+            method: 'POST',
+            body: JSON.stringify({ noteId })
+          });
+          if (res.success) {
+            currentSessionId = res.session._id;
+            sessionData = res.session;
+            // Update URL cleanly
+            window.history.replaceState({}, '', `?session_id=${currentSessionId}`);
+            startLearningFlow();
+          } else {
+            alert('Failed to start session.');
+          }
+        } else {
+          alert('No note specified.');
+          window.location.href = 'dashboard.html';
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Failed to initialize tutor.');
+      }
+    }
+
+    function renderCurriculum() {
+      els.curriculumList.innerHTML = '';
+      let totalMastery = 0;
+      let count = 0;
+
+      sessionData.curriculum.forEach((topic, idx) => {
+        let stateClass = 'locked';
+        let icon = '🔒';
+        
+        if (sessionData.completedConcepts.includes(topic)) {
+          stateClass = 'completed';
+          icon = '✓';
+          const score = sessionData.mastery[topic] || 100;
+          totalMastery += score;
+          count++;
+          if (score < 80) { stateClass = 'review'; icon = '🟡'; }
+        } else if (idx === sessionData.currentConceptIndex) {
+          stateClass = 'current';
+          icon = '🧑‍🏫';
+        }
+
+        const div = document.createElement('div');
+        div.className = `topic-item ${stateClass}`;
+        div.innerHTML = `<span class="topic-icon">${icon}</span> <span>${escapeHtml(topic)}</span>`;
+        els.curriculumList.appendChild(div);
+      });
+
+      if (count > 0) {
+        els.masteryScore.textContent = Math.round(totalMastery / count) + '%';
+      } else {
+        els.masteryScore.textContent = '0%';
+      }
+
+      els.topicProgress.textContent = `TOPIC ${Math.min(sessionData.currentConceptIndex + 1, sessionData.curriculum.length)} OF ${sessionData.curriculum.length}`;
+      
+      if (sessionData.note && sessionData.note._id) {
+        els.viewSourceBtn.href = `rag.html?noteId=${sessionData.note._id || sessionData.note}`;
+      }
+    }
+
+    async function startLearningFlow() {
+      els.init.style.display = 'none';
+      
+      if (sessionData.status === 'completed' || sessionData.currentConceptIndex >= sessionData.curriculum.length) {
+        els.ui.style.display = 'none';
+        
+        // Populate stats if available
+        if (sessionData.completionStats) {
+            document.getElementById('comp-mastery').textContent = sessionData.completionStats.overallMastery + '%';
+            document.getElementById('comp-accuracy').textContent = sessionData.completionStats.accuracy + '%';
+            document.getElementById('comp-topics').textContent = sessionData.completionStats.totalTopics + '/' + sessionData.completionStats.totalTopics;
+        }
+
+        els.completed.style.display = 'block';
+        return;
+      }
+
+      els.ui.style.display = 'grid';
+      renderCurriculum();
+
+      const currentTopic = sessionData.curriculum[sessionData.currentConceptIndex];
+      els.topicTitle.textContent = currentTopic;
+
+      // Reset Views
+      hideAllViews();
+      showLoader('Generating lesson...');
+
+      try {
+        const res = await apiCall('/cortex-tutor/lesson', {
+          method: 'POST',
+          body: JSON.stringify({ sessionId: currentSessionId })
+        });
+
+        if (res.success && res.lesson) {
+          renderLesson(res.lesson);
+        } else {
+          throw new Error("Failed to load lesson.");
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Failed to generate lesson.');
+      } finally {
+        hideLoader();
+      }
+    }
+
+    function renderLesson(lesson) {
+      document.getElementById('lesson-definition').textContent = lesson.definition;
+      document.getElementById('lesson-simple').textContent = lesson.simple_explanation;
+      document.getElementById('lesson-how').textContent = lesson.how_it_works;
+      document.getElementById('lesson-example').textContent = lesson.real_world_example;
+      
+      const takeawayEl = document.getElementById('lesson-takeaway');
+      takeawayEl.innerHTML = '';
+      if (lesson.key_points && Array.isArray(lesson.key_points)) {
+        lesson.key_points.forEach(pt => {
+          const li = document.createElement('li');
+          li.textContent = pt;
+          takeawayEl.appendChild(li);
+        });
+      }
+
+      els.sourceContext.textContent = `"${lesson.source_context}"`;
+
+      els.lessonView.style.display = 'block';
+      els.btnReady.style.display = 'block';
+    }
+
+    els.btnReady.addEventListener('click', async () => {
+      els.btnReady.style.display = 'none';
+      els.lessonView.style.display = 'none';
+      showLoader('Preparing question...');
+
+      try {
+        const res = await apiCall('/cortex-tutor/question', {
+          method: 'POST',
+          body: JSON.stringify({ sessionId: currentSessionId })
+        });
+        if (res.success && res.question) {
+          renderQuestion(res.question);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        hideLoader();
+      }
+    });
+
+    function renderQuestion(q) {
+      currentQuestionData = q;
+      selectedOption = null;
+      document.getElementById('question-text').textContent = q.question;
+      
+      const container = document.getElementById('options-container');
+      container.innerHTML = '';
+      
+      q.options.forEach((opt) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.textContent = opt;
+        btn.onclick = () => {
+          document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          selectedOption = opt;
+          els.btnSubmit.disabled = false;
+        };
+        container.appendChild(btn);
+      });
+
+      els.questionView.style.display = 'block';
+      els.btnSubmit.style.display = 'block';
+      els.btnSubmit.disabled = true;
+    }
+
+    els.btnSubmit.addEventListener('click', async () => {
+      if (!selectedOption) return;
+      els.btnSubmit.style.display = 'none';
+      
+      // Disable options
+      document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+      
+      showLoader('Evaluating...');
+      try {
+        const res = await apiCall('/cortex-tutor/answer', {
+          method: 'POST',
+          body: JSON.stringify({
+            sessionId: currentSessionId,
+            userAnswer: selectedOption
+          })
+        });
+
+        if (res.success && res.evaluation) {
+          renderEvaluation(res.evaluation);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        hideLoader();
+      }
+    });
+
+    function renderEvaluation(eval) {
+      els.feedbackView.className = `feedback-banner ${eval.correct ? 'success' : 'error'}`;
+      document.getElementById('feedback-title').textContent = eval.correct ? '🎉 Correct!' : '❌ Not quite.';
+      document.getElementById('feedback-text').textContent = eval.feedback;
+      document.getElementById('feedback-explanation').textContent = eval.explanation;
+
+      // Highlight the correct/wrong option
+      document.querySelectorAll('.option-btn').forEach(b => {
+        if (b.textContent === currentQuestionData.correct_answer) b.classList.add('correct');
+        else if (b.classList.contains('selected') && !eval.correct) b.classList.add('wrong');
+      });
+
+      // Update session data locally so UI changes immediately
+      if (eval.correct) {
+        const topic = sessionData.curriculum[sessionData.currentConceptIndex];
+        if (!sessionData.completedConcepts.includes(topic)) sessionData.completedConcepts.push(topic);
+        
+        // Very basic local prediction of dynamic mastery to keep UI fast
+        if(!sessionData.mastery[topic]) {
+            sessionData.mastery[topic] = 100; 
+        }
+
+        sessionData.currentConceptIndex++;
+        
+        els.btnNext.style.display = 'block';
+        els.btnNext.textContent = sessionData.currentConceptIndex >= sessionData.curriculum.length ? 'Complete Chapter →' : 'Next Topic →';
+        
+        document.getElementById('feedback-reteach').style.display = 'none';
+      } else {
+        // Adaptive reteaching
+        if (eval.reteach_explanation && eval.new_example) {
+          document.getElementById('feedback-reteach').style.display = 'block';
+          document.getElementById('reteach-explanation').textContent = eval.reteach_explanation;
+          document.getElementById('reteach-example').textContent = eval.new_example;
+        }
+        
+        els.btnRetry.style.display = 'block';
+        els.btnRetry.textContent = 'Try another question →';
+      }
+      renderCurriculum();
+    }
+
+    els.btnNext.addEventListener('click', () => {
+      if (sessionData.currentConceptIndex >= sessionData.curriculum.length) {
+        // Complete
+        apiCall(`/cortex-tutor/${currentSessionId}/complete`, { method: 'POST' }).then((res) => {
+          sessionData.status = 'completed';
+          if (res.stats) {
+            sessionData.completionStats = res.stats;
+          }
+          startLearningFlow();
+        });
+      } else {
+        startLearningFlow();
+      }
+    });
+
+    els.btnRetry.addEventListener('click', () => {
+      // Trigger a NEW question (the backend activeQuestionCache was cleared, so it will generate a new one)
+      els.btnReady.click(); // This will show loader and call /question again
+    });
+
+    function hideAllViews() {
+      els.lessonView.style.display = 'none';
+      els.questionView.style.display = 'none';
+      els.feedbackView.style.display = 'none';
+      els.btnReady.style.display = 'none';
+      els.btnSubmit.style.display = 'none';
+      els.btnNext.style.display = 'none';
+      els.btnRetry.style.display = 'none';
+    }
+
+    function showLoader(text) {
+      els.loaderText.textContent = text;
+      els.loader.style.display = 'flex';
+    }
+
+    function hideLoader() {
+      els.loader.style.display = 'none';
+    }
+
+    function escapeHtml(unsafe) {
+      if(!unsafe) return '';
+      return unsafe
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+    }
+
+    initTutor();
+  </script>
+</body>
+</html>

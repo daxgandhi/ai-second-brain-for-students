@@ -138,10 +138,11 @@ async function generatePlannerWithPython(subject, timeframe = '7 days', hoursPer
 /**
  * Helper: Generate weak topic & study recommendations via Python AI Microservice
  */
-async function generateRecommendationsWithPython(examResults = [], studyTopics = []) {
+async function generateRecommendationsWithPython(examResults = [], studyTopics = [], kgContext = []) {
   return await callPythonAiService('/api/ai/recommendation/generate', {
     exam_results: examResults,
-    study_topics: studyTopics
+    study_topics: studyTopics,
+    kg_context: kgContext
   });
 }
 
@@ -191,6 +192,52 @@ async function explainConceptWithPython(conceptName, graphContext, noteContent) 
   });
 }
 
+// ── Cortex Tutor AI Microservice Helpers ──────────────────────
+
+/**
+ * Helper: Generate curriculum based on Knowledge Graph and Note content
+ */
+async function generateTutorCurriculumWithPython(noteContent, kgNodes, kgEdges) {
+  return await callPythonAiService('/api/ai/tutor/curriculum', {
+    note_content: noteContent,
+    kg_nodes: kgNodes,
+    kg_edges: kgEdges
+  });
+}
+
+/**
+ * Helper: Generate structured lesson for a specific concept
+ */
+async function generateTutorLessonWithPython(concept, noteContent) {
+  return await callPythonAiService('/api/ai/tutor/lesson', {
+    concept,
+    note_content: noteContent
+  });
+}
+
+/**
+ * Helper: Generate understanding check question
+ */
+async function generateTutorQuestionWithPython(concept, lessonContext, attemptNumber = 1) {
+  return await callPythonAiService('/api/ai/tutor/question', {
+    concept,
+    lesson_context: lessonContext,
+    attempt_number: attemptNumber
+  });
+}
+
+/**
+ * Helper: Evaluate student answer and provide feedback
+ */
+async function evaluateTutorAnswerWithPython(concept, question, userAnswer, correctAnswer) {
+  return await callPythonAiService('/api/ai/tutor/evaluate', {
+    concept,
+    question,
+    user_answer: userAnswer,
+    correct_answer: correctAnswer
+  });
+}
+
 module.exports = {
   PYTHON_AI_URL,
   checkPythonServiceHealth,
@@ -209,5 +256,9 @@ module.exports = {
   generateKnowledgeGraphWithPython,
   askKnowledgeGraphWithPython,
   generateGraphInsightsWithPython,
-  explainConceptWithPython
+  explainConceptWithPython,
+  generateTutorCurriculumWithPython,
+  generateTutorLessonWithPython,
+  generateTutorQuestionWithPython,
+  evaluateTutorAnswerWithPython
 };

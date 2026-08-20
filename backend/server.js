@@ -44,6 +44,7 @@ const flashcardsRoutes = require('./routes/flashcards');
 const sessionsRoutes = require('./routes/sessions');
 const analyticsRoutes = require('./routes/analytics');
 const knowledgeGraphRoutes = require('./routes/knowledgeGraph');
+const tutorRoutes = require('./routes/tutor');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/notes', notesRoutes);
@@ -56,6 +57,7 @@ app.use('/api/flashcards', flashcardsRoutes);
 app.use('/api/sessions', sessionsRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/knowledge-graph', knowledgeGraphRoutes);
+app.use('/api/cortex-tutor', tutorRoutes);
 
 // ── Health Check ──────────────────────────────────────────────
 app.get('/api/health', (req, res) => {

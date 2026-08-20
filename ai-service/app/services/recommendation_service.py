@@ -10,8 +10,9 @@ class RecommendationService:
         logger.info("Analyzing study performance and generating recommendations")
         exam_str = json.dumps(request.exam_results) if request.exam_results else "No exam history recorded yet."
         topics_str = ", ".join(request.study_topics) if request.study_topics else "General Coursework"
+        kg_str = ", ".join(request.kg_context) if request.kg_context else "No graph context available."
 
-        prompt = get_prompt("recommendation", exam_results=exam_str, study_topics=topics_str)
+        prompt = get_prompt("recommendation", exam_results=exam_str, study_topics=topics_str, kg_context=kg_str)
         raw_response = await llm_service.generate_completion(prompt)
 
         try:
@@ -20,26 +21,32 @@ class RecommendationService:
                 parsed = json.loads(json_match.group(0))
                 recs = [
                     ActionableRecommendation(
-                        topic=r.get("topic", "General Study"),
-                        action=r.get("action", "Practice more questions."),
-                        priority=r.get("priority", "Medium")
+                        type=r.get("type", "practice"),
+                        title=r.get("title", "Review topic"),
+                        duration=r.get("duration", 5)
                     )
-                    for r in parsed.get("recommendations", [])
+                    for r in parsed.get("plan", [])
                 ]
                 return RecommendationResponse(
-                    weakTopics=parsed.get("weakTopics", []),
-                    recommendations=recs,
-                    overallAdvice=parsed.get("overallAdvice", "Focus on practicing weak areas consistently.")
+                    focus_topic=parsed.get("focus_topic", "General Study"),
+                    performance=parsed.get("performance", 0),
+                    weak_concepts=parsed.get("weak_concepts", []),
+                    reason=parsed.get("reason", "Based on your study data."),
+                    related_concepts=parsed.get("related_concepts", []),
+                    plan=recs
                 )
         except Exception as e:
             logger.warning(f"Failed to parse LLM JSON response for recommendations: {str(e)}")
 
         return RecommendationResponse(
-            weakTopics=["Core Foundations"],
-            recommendations=[
-                ActionableRecommendation(topic="Overall Review", action="Generate a practice quiz to test your memory.", priority="High")
-            ],
-            overallAdvice="Consistently review your uploaded notes and test yourself using flashcards."
+            focus_topic="Core Foundations",
+            performance=0,
+            weak_concepts=["Core Foundations"],
+            reason="Insufficient data to generate specific insights.",
+            related_concepts=[],
+            plan=[
+                ActionableRecommendation(type="practice", title="Generate a practice quiz to test your memory.", duration=10)
+            ]
         )
 
 recommendation_service = RecommendationService()

@@ -801,8 +801,10 @@
           item.addEventListener('click', () => selectNote(note._id, item));
           els.notesList.appendChild(item);
         });
+        return notes;
       } catch (err) {
         els.notesLoading.textContent = '⚠️ Failed to load notes.';
+        return [];
       }
     }
 
@@ -1295,7 +1297,37 @@
     });
 
     // Init
-    loadNotes();
+    (async function init() {
+      const notes = await loadNotes();
+      
+      // Handle Deep Linking for Smart Revision
+      const urlParams = new URLSearchParams(window.location.search);
+      const prefillNoteId = urlParams.get('note_id');
+      const prefillConcept = urlParams.get('concept');
+
+      if (prefillNoteId && notes && notes.some(n => n._id === prefillNoteId)) {
+        const noteEl = document.querySelector(`.note-select-item[data-note-id="${prefillNoteId}"]`);
+        if (noteEl) {
+          selectNote(prefillNoteId, noteEl);
+          
+          // If concept is provided, wait a bit for graph to load then search
+          if (prefillConcept) {
+             els.searchInput.value = prefillConcept;
+             // Polling for network readiness (naive but works for V1)
+             let attempts = 0;
+             const checkReady = setInterval(() => {
+               attempts++;
+               if (network || attempts > 20) {
+                 clearInterval(checkReady);
+                 if (network) {
+                   els.searchInput.dispatchEvent(new Event('input'));
+                 }
+               }
+             }, 500);
+          }
+        }
+      }
+    })();
   </script>
 </body>
 </html>

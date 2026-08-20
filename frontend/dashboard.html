@@ -222,44 +222,44 @@
     <!-- Main Content -->
     <main class="main-content">
       <div class="page-header">
-        <h1 id="welcome-heading">Good day! 👋</h1>
+        <h1 id="welcome-heading" class="text-gradient">Good day! 👋</h1>
         <p>Here's your study overview</p>
       </div>
 
       <div class="page-body">
         <!-- Welcome Banner -->
-        <div class="welcome-banner">
+        <div class="welcome-banner bg-gradient-animated">
           <div>
             <h2>Ready to study smarter?</h2>
             <p>Use Cortex AI to summarize notes, generate practice exams, and plan your schedule.</p>
           </div>
-          <a href="chat.html" class="btn btn-primary">💬 Start Chatting</a>
+          <a href="chat.html" class="btn btn-primary glass">💬 Start Chatting</a>
         </div>
 
         <!-- Stats -->
         <div class="grid-4" id="stats-grid">
-          <div class="stat-card">
+          <div class="stat-card glass hover-lift">
             <div class="stat-icon blue">📁</div>
             <div class="stat-info">
               <div class="stat-value" id="stat-notes">0</div>
               <div class="stat-label">Notes Uploaded</div>
             </div>
           </div>
-          <div class="stat-card">
+          <div class="stat-card glass hover-lift">
             <div class="stat-icon green">💬</div>
             <div class="stat-info">
               <div class="stat-value">∞</div>
               <div class="stat-label">AI Chats Available</div>
             </div>
           </div>
-          <div class="stat-card">
+          <div class="stat-card glass hover-lift">
             <div class="stat-icon purple">⏱️</div>
             <div class="stat-info">
               <div class="stat-value" id="stat-hours">0</div>
               <div class="stat-label">Study Hours</div>
             </div>
           </div>
-          <div class="stat-card">
+          <div class="stat-card glass hover-lift">
             <div class="stat-icon orange">📅</div>
             <div class="stat-info">
               <div class="stat-value">Plan</div>
@@ -268,57 +268,55 @@
           </div>
         </div>
 
-        <!-- AI Study Recommendation Engine -->
-        <div id="ai-recommendation-section" style="margin-bottom: 32px; display: none;">
+        <!-- AI Study Insight Engine -->
+        <div id="ai-insight-section" style="margin-bottom: 32px; display: none;">
           <h3 style="margin: 28px 0 16px; display: flex; align-items: center; gap: 8px;">
-             ⭐ AI Study Recommendation Engine
-             <span style="font-size: 0.8rem; background: rgba(59, 130, 246, 0.1); color: #3b82f6; padding: 4px 8px; border-radius: var(--radius-sm); font-weight: 600;">Most Important</span>
+             🧠 AI Study Insight
+             <span style="font-size: 0.8rem; background: rgba(59, 130, 246, 0.1); color: #3b82f6; padding: 4px 8px; border-radius: var(--radius-sm); font-weight: 600;">Smart Revision</span>
           </h3>
-          <div class="card" style="background: var(--bg-card); border-left: 4px solid #8b5cf6;" id="ai-recommendation-content">
-            <div style="padding: 16px; color: var(--text-muted);">Analyzing your study pattern...</div>
-          </div>
-        </div>
-
-        <!-- Weak Topics (Areas to Review) -->
-        <div id="weak-topics-section" style="display:none; margin-bottom: 32px;">
-          <h3 style="margin: 28px 0 16px; color: var(--danger);">⚠ Areas to Review</h3>
-          <div class="grid-4" id="weak-topics-grid">
-            <!-- Populated by JS -->
+          <div class="card glass hover-lift" style="border-left: 4px solid #8b5cf6;" id="ai-insight-content">
+            <!-- Skeleton Loader -->
+            <div style="padding: 20px;">
+               <div style="height: 24px; background: var(--border); border-radius: 4px; width: 40%; margin-bottom: 16px; animation: pulse 1.5s infinite;"></div>
+               <div style="height: 16px; background: var(--border); border-radius: 4px; width: 80%; margin-bottom: 8px; animation: pulse 1.5s infinite;"></div>
+               <div style="height: 16px; background: var(--border); border-radius: 4px; width: 60%; margin-bottom: 24px; animation: pulse 1.5s infinite;"></div>
+               <div style="height: 36px; background: var(--border); border-radius: var(--radius-sm); width: 200px; animation: pulse 1.5s infinite;"></div>
+            </div>
           </div>
         </div>
 
         <!-- Quick Actions -->
         <h3 style="margin: 28px 0 16px;">Quick Actions</h3>
         <div class="quick-actions">
-          <a href="chat.html" class="quick-btn">
+          <a href="chat.html" class="quick-btn glass hover-lift">
             <div class="q-icon">💬</div>
             <div class="q-label">AI Chat</div>
           </a>
-          <a href="upload.html" class="quick-btn">
+          <a href="upload.html" class="quick-btn glass hover-lift">
             <div class="q-icon">📁</div>
             <div class="q-label">Upload Notes</div>
           </a>
-          <a href="summary.html" class="quick-btn">
+          <a href="summary.html" class="quick-btn glass hover-lift">
             <div class="q-icon">📋</div>
             <div class="q-label">Summarize</div>
           </a>
-          <a href="knowledge-graph.html" class="quick-btn">
+          <a href="knowledge-graph.html" class="quick-btn glass hover-lift">
             <div class="q-icon">🧠</div>
             <div class="q-label">Knowledge Graph</div>
           </a>
-          <a href="exam.html" class="quick-btn">
+          <a href="exam.html" class="quick-btn glass hover-lift">
             <div class="q-icon">🎯</div>
             <div class="q-label">Generate MCQs</div>
           </a>
-          <a href="flashcards.html" class="quick-btn">
+          <a href="flashcards.html" class="quick-btn glass hover-lift">
             <div class="q-icon">📇</div>
             <div class="q-label">Flashcards</div>
           </a>
-          <a href="session.html" class="quick-btn">
+          <a href="session.html" class="quick-btn glass hover-lift">
             <div class="q-icon">⏱️</div>
             <div class="q-label">Study Timer</div>
           </a>
-          <a href="planner.html" class="quick-btn">
+          <a href="planner.html" class="quick-btn glass hover-lift">
             <div class="q-icon">📅</div>
             <div class="q-label">Study Planner</div>
           </a>
@@ -381,53 +379,105 @@
               document.getElementById('stat-hours').textContent = analyticsData.data.metrics.totalStudyHours;
             }
 
-            // Render Weak Topics
-            const weakTopics = analyticsData.data.weakTopics || [];
-            if (weakTopics.length > 0) {
-              document.getElementById('weak-topics-section').style.display = 'block';
-              document.querySelector('#weak-topics-section h3').style.color = 'var(--text-primary)';
-              document.querySelector('#weak-topics-section h3').innerHTML = 'Areas to Review';
-              const grid = document.getElementById('weak-topics-grid');
-              grid.innerHTML = weakTopics.map(wt => {
-                const isCritical = wt.avgScore < 40;
-                const color = isCritical ? 'var(--danger)' : 'var(--warning)';
-                const bg = isCritical ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 158, 11, 0.1)';
-                return `
-                <div class="card" style="padding: 16px; display: flex; flex-direction: column; justify-content: space-between; border-top: 3px solid ${color};">
-                  <div>
-                    <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; margin-bottom: 4px; letter-spacing: 0.05em;">Needs Practice</div>
-                    <div style="font-weight: 600; color: var(--text-primary); font-size: 1.05rem; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${escapeHtml(wt.topic)}</div>
-                  </div>
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 0.85rem; font-weight: 700; color: ${color}; background: ${bg}; padding: 4px 8px; border-radius: var(--radius-sm);">${wt.avgScore}% Accuracy</span>
-                    <a href="exam.html" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">Practice →</a>
-                  </div>
-                </div>
-              `}).join('');
-            }
           }
         } catch (analyticsErr) {
           console.error("Failed to fetch analytics for dashboard:", analyticsErr);
         }
 
-        // Fetch AI Recommendation
+        // Fetch AI Insight
         try {
-          const recData = await apiCall('/analytics/recommendation');
-          if (recData.success && recData.recommendation) {
-            document.getElementById('ai-recommendation-section').style.display = 'block';
-            
-            const lines = recData.recommendation.split('\n');
-            const mainText = lines[0];
-            const bullets = lines.slice(1).map(l => `<div style="margin-top: 8px; font-family: monospace; color: var(--text-secondary);">${escapeHtml(l)}</div>`).join('');
+          // Show skeleton
+          document.getElementById('ai-insight-section').style.display = 'block';
 
-            document.getElementById('ai-recommendation-content').innerHTML = `
-              <div style="padding: 20px;">
-                <div style="font-size: 1.05rem; font-weight: 600; color: var(--text-primary); margin-bottom: 12px; font-family: monospace;">${escapeHtml(mainText)}</div>
-                ${bullets}
+          const insightData = await apiCall('/analytics/insights');
+          
+          if (insightData.success && insightData.insight) {
+            const ins = insightData.insight;
+            
+            let planHtml = '';
+            if (ins.plan && ins.plan.length > 0) {
+              planHtml = '<div style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">';
+              planHtml += '<h4 style="margin: 0 0 12px 0; font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Today\'s Smart Revision</h4>';
+              
+              ins.plan.forEach((p, idx) => {
+                let actionBtn = '';
+                if (p.type === 'practice') {
+                  actionBtn = `<a href="exam.html?topic=${encodeURIComponent(ins.focus_topic)}" class="btn btn-primary" style="padding: 6px 12px; font-size: 0.8rem;">Practice →</a>`;
+                } else if (p.type === 'flashcards') {
+                  actionBtn = `<a href="flashcards.html" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">Review →</a>`;
+                } else if (p.type === 'explanation') {
+                  const kgUrl = ins.note_id ? `knowledge-graph.html?note_id=${ins.note_id}&concept=${encodeURIComponent(ins.focus_topic)}` : `knowledge-graph.html?concept=${encodeURIComponent(ins.focus_topic)}`;
+                  actionBtn = `<a href="${kgUrl}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">Explore →</a>`;
+                } else {
+                  actionBtn = `<a href="#" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">Start</a>`;
+                }
+
+                planHtml += `
+                  <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-secondary); padding: 10px 16px; border-radius: var(--radius-sm); margin-bottom: 8px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                      <span style="font-weight: 700; color: var(--text-muted);">${idx + 1}</span>
+                      <div>
+                        <div style="font-size: 0.95rem; font-weight: 600; color: var(--text-primary);">${escapeHtml(p.title)}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">${p.duration} min</div>
+                      </div>
+                    </div>
+                    ${actionBtn}
+                  </div>
+                `;
+              });
+              
+              if (ins.note_id) {
+                planHtml += `
+                  <div style="margin-top: 16px; text-align: center;">
+                    <a href="cortex-tutor.html?note_id=${ins.note_id}" class="btn btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                      <span>🧑‍🏫</span> Learn with Cortex Tutor
+                    </a>
+                  </div>
+                `;
+              }
+              
+              planHtml += '</div>';
+            }
+
+            document.getElementById('ai-insight-content').innerHTML = `
+              <div style="padding: 24px;">
+                <div style="font-size: 0.85rem; color: var(--danger); text-transform: uppercase; font-weight: 700; margin-bottom: 8px; letter-spacing: 0.05em;">Focus Area: ${escapeHtml(ins.focus_topic)}</div>
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                  <h4 style="margin: 0; font-size: 1.4rem; color: var(--text-primary);">${ins.performance}% Mastery</h4>
+                  <div style="flex: 1; height: 8px; background: var(--bg-secondary); border-radius: 4px; overflow: hidden;">
+                    <div style="height: 100%; width: ${ins.performance}%; background: ${ins.performance < 50 ? 'var(--danger)' : 'var(--warning)'}; border-radius: 4px;"></div>
+                  </div>
+                </div>
+                <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5; margin-bottom: 0;">${escapeHtml(ins.reason)}</p>
+                
+                ${ins.related_concepts && ins.related_concepts.length > 0 ? `
+                  <div style="margin-top: 16px; font-size: 0.85rem; color: var(--text-muted);">
+                    <span style="font-weight: 600;">Related Concepts:</span> ${ins.related_concepts.map(c => `<span style="display: inline-block; background: var(--bg-secondary); padding: 2px 8px; border-radius: 12px; margin-left: 6px;">${escapeHtml(c)}</span>`).join('')}
+                  </div>
+                ` : ''}
+
+                ${planHtml}
+              </div>
+            `;
+          } else {
+            // Not enough data
+            document.getElementById('ai-insight-content').innerHTML = `
+              <div style="padding: 24px; text-align: center;">
+                <div style="font-size: 2rem; margin-bottom: 12px;">🧠</div>
+                <h4 style="color: var(--text-primary); margin-bottom: 8px;">Not enough study data yet</h4>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 16px;">Complete a few practice questions or exams and Cortex AI will start identifying your weak areas.</p>
+                <a href="exam.html" class="btn btn-primary" style="display: inline-flex;">Take an Exam</a>
               </div>
             `;
           }
         } catch (recErr) {
+            console.error("Failed to fetch AI Insight:", recErr);
+            document.getElementById('ai-insight-content').innerHTML = `
+              <div style="padding: 24px; color: var(--danger);">
+                Unable to generate your study insight right now.
+                <button class="btn btn-secondary" onclick="window.location.reload()" style="margin-top: 12px;">Try Again</button>
+              </div>
+            `;
             console.error("Failed to fetch AI recommendation:", recErr);
         }
 
@@ -451,6 +501,7 @@
               <div class="note-meta">${isPdf ? note.fileName || 'PDF' : 'Text note'} · ${formatDate(note.createdAt)}</div>
             </div>
             <div class="note-actions">
+              <a href="cortex-tutor.html?note_id=${note._id}" class="icon-btn" style="color: var(--accent-primary);">🧑‍🏫 Teach Me</a>
               ${isPdf && note.fileUrl ? `<a href="http://localhost:5000${note.fileUrl}" target="_blank" class="icon-btn">👁️ View</a>` : ''}
               <button class="icon-btn" onclick="deleteNote('${note._id}', this)">🗑️ Delete</button>
             </div>

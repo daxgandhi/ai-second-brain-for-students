@@ -10,9 +10,11 @@ This project is designed as a **personalized learning system** where students ca
 
 * Upload notes (PDF/Text)
 * Ask questions based on their notes (RAG)
+* Explore note concepts visually with Knowledge Graphs
+* Learn step-by-step with an AI Guided Tutor
 * Generate quizzes and exam papers
 * Practice flashcards with spaced repetition
-* Track weak topics and get recommendations
+* Track weak topics and get AI Smart Revision recommendations
 
 > 💡 This system combines **AI + Retrieval + Learning Science** to improve both understanding and long-term memory.
 
@@ -20,10 +22,12 @@ This project is designed as a **personalized learning system** where students ca
 
 ## 🔥 Key Highlights
 
-* 🤖 Gemini AI Integration (real AI responses)
+* 🤖 Gemini & Groq AI Integration (with seamless fallback)
 * 🔎 Retrieval-Augmented Generation (RAG)
-* 🧠 Spaced Repetition System (Anki-style)
-* 📊 Weak Topic Detection & Study Recommendations
+* 🧑‍🏫 Cortex Tutor (Adaptive Step-by-Step AI Learning)
+* 🧠 Knowledge Graph Generation (Visual concept mapping)
+* 🧠 Spaced Repetition System (Anki-style Flashcards)
+* 📊 Smart Revision (AI Study Insights & Weak Topic Detection)
 * 📝 Exam & Quiz Generator (Parul University format)
 * 📚 Chat with Notes (Context-aware responses)
 * 📈 Analytics Dashboard (study tracking)
@@ -34,10 +38,11 @@ This project is designed as a **personalized learning system** where students ca
 
 1. Register / Login
 2. Upload Notes (PDF/Text)
-3. Chat with Notes (RAG)
-4. Generate Quiz / Exam
-5. Practice Flashcards (SRS Mode)
-6. View Analytics & Weak Topics
+3. Explore Knowledge Graph & Chat with Notes (RAG)
+4. Learn step-by-step with Cortex Tutor (Teach Me mode)
+5. Generate Quiz / Exam
+6. Practice Flashcards (SRS Mode)
+7. View Analytics & AI Smart Revision Insights
 
 ---
 
@@ -50,6 +55,8 @@ ai-second-brain/
 │   ├── index.html
 │   ├── dashboard.html
 │   ├── chat.html
+│   ├── cortex-tutor.html
+│   ├── knowledge-graph.html
 │   ├── exam.html
 │   ├── flashcards.html
 │   ├── planner.html
@@ -115,13 +122,14 @@ Flashcards are enhanced with **Anki-style learning**:
 | User Authentication  | Secure login using JWT           |
 | Notes Upload         | Upload and manage PDF/Text notes |
 | Chat with Notes      | Ask questions using RAG          |
+| Knowledge Graph      | Visual mapping of core concepts  |
+| Cortex Tutor         | Step-by-step adaptive AI teacher |
 | Quiz Generator       | MCQ-based testing                |
 | Exam Generator       | Parul University format papers   |
 | Flashcards + SRS     | Smart revision system            |
 | Study Planner        | Daily study scheduling           |
 | Analytics Dashboard  | Track performance & progress     |
-| Weak Topic Detection | Identify weak areas              |
-| Study Recommendation | AI-based suggestions             |
+| AI Smart Revision    | Actionable AI study insights     |
 
 ---
 
